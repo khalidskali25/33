@@ -338,7 +338,7 @@ const ABSDEF={titleFull:'ورقة الغياب الأسبوعية',titleHalf:'و
  days:[1,1,1,1,1,1],satPM:false,showCode:true,showDates:true,showNotes:false,showTotal:false,teacherRow:true,extraRows:2,
  orientFull:'landscape',orientHalf:'portrait',font:10,hdr:'line',sign1:'توقيع الحارس(ة) العام(ة)',sign2:''};
 const DAYS_AR=['الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-function AB(){S.settings.abs=Object.assign({},ABSDEF,S.settings.abs||{});return S.settings.abs;}
+function AB(){S.settings.abs=Object.assign({},ABSDEF,S.settings.abs||{});const a=S.settings.abs;a.satPM=true;a.exSatPM=true;a.days=(a.days||[1,1,1,1,1,1]).slice();a.days[5]=1;return a;}
 function abSet(k,v){AB()[k]=v;save();abPrev();}
 V.absheet=()=>{const t=AB();const chk=(k,l)=>`<label class="muted" style="margin-left:12px"><input type="checkbox" ${t[k]?'checked':''} onchange="abSet('${k}',this.checked)"> ${l}</label>`;
  return title('أوراق الغياب','ورقة أسبوعية كاملة أو نصف أسبوعية، لقسم واحد أو لكل الأقسام دفعة واحدة، مع إمكانية تعديل شكلها ومحتواها.')+needData()+
@@ -355,7 +355,7 @@ V.absheet=()=>{const t=AB();const chk=(k,l)=>`<label class="muted" style="margin
  <div class="fld" style="flex:2;min-width:260px"><label>التعليمة (اتركها فارغة لإخفائها)</label><input value="${esc(t.instr)}" onchange="abSet('instr',this.value)"></div>
  <div class="fld" style="flex:1;min-width:200px"><label>التوقيع الأول</label><input value="${esc(t.sign1)}" onchange="abSet('sign1',this.value)"></div>
  <div class="fld" style="flex:1;min-width:200px"><label>التوقيع الثاني (اختياري)</label><input value="${esc(t.sign2)}" onchange="abSet('sign2',this.value)"></div></div>
- <h3 style="margin-top:12px">الأيام والحصص</h3><div class="row">${DAYS_AR.map((d,i)=>`<label class="muted" style="margin-left:10px"><input type="checkbox" ${t.days[i]?'checked':''} onchange="AB().days[${i}]=this.checked?1:0;save();abPrev()"> ${d}</label>`).join('')}${chk('satPM','حصص السبت مساء')}</div>
+ <h3 style="margin-top:12px">الأيام والحصص</h3><div class="row">${DAYS_AR.map((d,i)=>`<label class="muted" style="margin-left:10px"><input type="checkbox" ${t.days[i]?'checked':''} onchange="AB().days[${i}]=this.checked?1:0;save();abPrev()"> ${d}</label>`).join('')}<span class="muted" style="margin-right:10px">السبت يوم عمل كامل (صباحا ومساء)</span></div>
  <div class="row" style="margin-top:8px"><div class="fld" style="flex:1"><label>حصص الصباح (مفصولة بفاصلة)</label><input value="${esc(S.settings.periodsAM.join(','))}" onchange="S.settings.periodsAM=this.value.split(',').map(x=>x.trim()).filter(Boolean);save();abPrev()"></div>
  <div class="fld" style="flex:1"><label>حصص المساء (اتركها فارغة لورقة صباحية فقط)</label><input value="${esc(S.settings.periodsPM.join(','))}" onchange="S.settings.periodsPM=this.value.split(',').map(x=>x.trim()).filter(Boolean);save();abPrev()"></div></div>
  <h3 style="margin-top:12px">الأعمدة والأسطر</h3><div class="row">${chk('showCode','عمود رقم مسار')}${chk('showDates','التاريخ تحت اسم اليوم')}${chk('showTotal','عمود مجموع الساعات')}${chk('showNotes','عمود الملاحظات')}${chk('teacherRow','سطر توقيع الأساتذة أسفل الجدول')}
@@ -688,7 +688,7 @@ const isoOf=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${S
 const dIdx=iso=>{const g=new Date(iso+'T00:00').getDay();return g===0?-1:g-1;};
 const monthOf=iso=>MNAMES[new Date(iso+'T00:00').getMonth()];
 const allP=()=>[...S.settings.periodsAM,...S.settings.periodsPM];
-function defTT(){const AM=S.settings.periodsAM;return [0,1,2,3,4].map(()=>allP()).concat([AM.slice()]);}
+function defTT(){return [0,1,2,3,4,5].map(()=>allP());}
 function TT(c){const t=S.timetable[c];return t&&t.length===6?t:defTT();}
 function LOG(iso,c,create){if(!S.absLog[iso]){if(!create)return null;S.absLog[iso]={};}if(!S.absLog[iso][c]){if(!create)return null;S.absLog[iso][c]={st:{},at:Date.now()};}return S.absLog[iso][c];}
 function stRec(L,id){return L.st[id]||(L.st[id]={a:[],j:false,r:''});}
@@ -1282,7 +1282,7 @@ function exFit(root){root.querySelectorAll('.exf').forEach(d=>{let fs=parseFloat
  <div class="fld" style="flex:1;min-width:200px"><label>سطر التوقيعات</label><input value="${esc(t.exSign)}" onchange="abSet('exSign',this.value)"></div>
  <div class="fld" style="flex:1;min-width:200px"><label>خانة الإدارة</label><input value="${esc(t.exAdm)}" onchange="abSet('exAdm',this.value)"></div>
  <div class="fld"><label>أسطر خانة الإدارة (0 = إخفاء)</label><input type="number" min="0" max="6" value="${t.exAdmRows}" onchange="abSet('exAdmRows',Math.max(0,Math.min(6,+this.value||0)))"></div>
- <label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exTT!==false?'checked':''} onchange="abSet('exTT',this.checked)"> تظليل الحصص غير المبرمجة (من جداول الحصص)</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exSubj!==false?'checked':''} onchange="abSet('exSubj',this.checked)"> كتابة المادة تحت الساعة</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exSatPM?'checked':''} onchange="abSet('exSatPM',this.checked)"> حصص السبت مساء (كما في المصنف)</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exCode?'checked':''} onchange="abSet('exCode',this.checked)"> إظهار عمود الرقم الوطني (مخفي في المصنف)</label><div class="fld"><label>عدد أسطر التلاميذ (المصنف: 46)</label><input type="number" min="10" max="60" value="${t.exRows}" onchange="abSet('exRows',Math.max(10,Math.min(60,+this.value||46)))"></div><div class="fld"><label>عنوان عمود الرقم</label><input value="${esc(t.exNational)}" onchange="abSet('exNational',this.value)"></div></div>`:''}
+ <label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exTT!==false?'checked':''} onchange="abSet('exTT',this.checked)"> تظليل الحصص غير المبرمجة (من جداول الحصص)</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exSubj!==false?'checked':''} onchange="abSet('exSubj',this.checked)"> كتابة المادة تحت الساعة</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exCode?'checked':''} onchange="abSet('exCode',this.checked)"> إظهار عمود الرقم الوطني (مخفي في المصنف)</label><div class="fld"><label>عدد أسطر التلاميذ (المصنف: 46)</label><input type="number" min="10" max="60" value="${t.exRows}" onchange="abSet('exRows',Math.max(10,Math.min(60,+this.value||46)))"></div><div class="fld"><label>عنوان عمود الرقم</label><input value="${esc(t.exNational)}" onchange="abSet('exNational',this.value)"></div></div>`:''}
  <h3 style="margin-top:12px">الألوان</h3>
  <div class="row" style="margin-bottom:6px"><span class="muted">ألوان جاهزة:</span>${Object.keys(ABS_PRESETS).map(n=>`<button class="btn out sm" onclick="abPreset('${n}')">${n}</button>`).join('')}</div>
  <div class="colgrid">${ex?col('hdrLbl','خانات الترويسة')+col('hdrVal','قيم الترويسة')+col('band','شريط القسم')+col('bandText','نص الشريط')+col('clsBox','خانة القسم')+col('clsText','نص خانة القسم')+col('dayHdr','خانات الأيام')+col('am','حصص الصباح')+col('pm','حصص المساء')+col('colHdr','رأس الأعمدة')+col('nameCol','عمود الأسماء')+col('sign','سطر التوقيعات')+col('adm','خانة الإدارة')+col('off','خطوط الحصص غير المبرمجة')+col('border','الحدود')+col('text','لون الكتابة')
@@ -3426,7 +3426,7 @@ function omrPages(cls,D,type){const t=AB(),AM=S.settings.periodsAM,PM=S.settings
   const reg=type==='slip'||type==='sliph';
   /* سجل أوراق الدخول: عند توفر جدول حصص للقسم تُعرض الحصص الفعلية فقط؛ وإلا تبقى كل حصص اليوم */
   const hasTT=reg&&((S.ttd&&S.ttd[cl]&&Object.keys(S.ttd[cl]).length)||(S.timetable&&S.timetable[cl]&&S.timetable[cl].length===6));
-  const perR=x=>hasTT?P.filter(p=>(tt[x.i]||[]).includes(p)):(x.i===5&&!t.satPM?AM:P);
+  const perR=x=>hasTT?P.filter(p=>(tt[x.i]||[]).includes(p)):P;
   const selR=hasTT?sel.filter(x=>perR(x).length):sel;const nColW=selR.reduce((a,x)=>a+perR(x).length,0);
   /* قاعدة: الأوراق الأسبوعية أفقية دائما، ونصف الأسبوعية عمودية */const land=type==='full'||type==='slip';const wkP=type==='slip'&&!land;
   if(!selR.length)return;const parts=(land||wkP)?[selR]:[selR.slice(0,Math.ceil(selR.length/2)),selR.slice(Math.ceil(selR.length/2))].filter(p=>p.length);
