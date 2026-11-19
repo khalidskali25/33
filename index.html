@@ -3481,6 +3481,7 @@ function omrPrint(){const a=omrArgs();const p=omrPages(a.cls,a.D,omrT);if(!p.len
  const P=$('#print');P.innerHTML=`<style>@page{size:210mm 297mm;margin:0}@page omL{size:297mm 210mm;margin:0}.om-pg.land{page:omL}</style>`+OMR_CSS+p.map(omrWrap).join('');
  P.style.cssText='display:block;position:absolute;left:-30000px;top:0';omrFit(P);P.style.cssText='';setTimeout(()=>window.print(),150);}
 
+/*@MASSAR{*/
 /* ================= جسر مسار (JM1): نقل غياب اليوم نحو منظومة مسار ================= */
 function MSR_CORE(rootDoc, text, mode){
   function norm(s){return String(s==null?'':s).replace(/[٠-٩]/g,function(d){return String(d.charCodeAt(0)-1632);}).replace(/[۰-۹]/g,function(d){return String(d.charCodeAt(0)-1776);}).replace(/\s+/g,' ').trim();}
@@ -3595,6 +3596,7 @@ function msrDlg(c){c=c||rgC;let b=$('#msrDlg');if(b)b.remove();const r=msrCode(c
 (()=>{const base=V.register;V.register=(...a)=>{const h=base(...a);if(rgTab!=='reg')return h;const L=LOG(rgD,rgC,false);
  const btn=`<button class="btn sm" style="background:#1B4332" onclick="msrDlg()">نحو مسار${L&&L.msr?' ✓':''}</button>`;
  return h.replace('<button class="btn gold sm" onclick="rgPrint()">طباعة غياب اليوم</button>','<button class="btn gold sm" onclick="rgPrint()">طباعة غياب اليوم</button>'+btn);};})();
+/*}@MASSAR*/
 
 /* ================= قاعدة: اسم المديرية الإقليمية يُكتب بالاسم فقط، دون «عمالة» أو «إقليم» (مثال: طنجة أصيلة) ================= */
 function dirClean(v){return String(v||'').replace(/^\s*(?:المديرية\s+الإقليمية\s*(?:ل|ب)?\s*)?(?:عمالة|العمالة|إقليم|اقليم|الإقليم)\s*[:：\-–—]?\s*/,'').trim();}
@@ -3814,7 +3816,9 @@ function msmCalc(cls,ym){const st=classStudents(cls),R={};st.forEach(s=>R[s.id]=
    if(msmMode==='days'&&sch.length&&a.length>=sch.length){x.j?r.jd++:r.ud++;}else{x.j?r.jh+=a.length:r.uh+=a.length;}});});
  tots.forEach(t=>st.forEach(s=>{const x=t.st[s.id];const n=x?Math.min(x.n||0,t.max):0;if(n)x.j?R[s.id].jh+=n:R[s.id].uh+=n;}));
  return{st,R,tots:tots.length};}
+/*@MASSAR{*/
 function msmCode(cls,ym,c){const L=['# JM2 | قسم: '+cls+' | شهر: '+ym];c.st.forEach(s=>{const r=c.R[s.id];if(!(r.jd||r.jh||r.ud||r.uh))return;const id=/^[A-Za-z]\d{6,}$/.test(String(s.code||'').trim())?String(s.code).trim().toUpperCase():String(s.rank);L.push(id+': '+[r.jd,r.jh,r.ud,r.uh].join(','));});return L.join('\n');}
+/*}@MASSAR*/
 function msmView(){if(!rgC&&S.classes.length)rgC=S.classes[0].code;if(!rgC)return '<div class="card"><div class="note">حمّل لوائح الأقسام أولا.</div></div>';const t=new Date();if(msmM===null)msmM=t.getMonth()+1;if(!MSM_MONTHS.some(x=>x[0]===msmM))msmM=9;
  const ym=msmYM(msmM),c=msmCalc(rgC,ym),code=msmCode(rgC,ym,c),n=c.st.filter(s=>{const r=c.R[s.id];return r.jd||r.jh||r.ud||r.uh;}).length;const z=v=>v?v:'';
  return `<div class="card"><h3>📅 المجموع الشهري للغياب بصيغة شاشة مسار</h3>
