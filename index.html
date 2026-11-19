@@ -3448,7 +3448,9 @@ function omrPages(cls,D,type){const t=AB(),AM=S.settings.periodsAM,PM=S.settings
    const bx=Math.max(2.2,Math.min(3.6,rh-1,colW-1.4)),fs=land?6.2:7,lbl=p=>land?String(p).split('-')[0]:p;
    const offF=(x,p)=>!(tt[x.i]||[]).includes(p);const vh=10;
    const cells=(inner)=>days.map(x=>per(x).map((p,j)=>{const last=j===per(x).length-1,o=offF(x,p);return `<td data-k="${x.i}|${esc(p)}" class="${AM.includes(p)?'':'pm '}${last?'dd ':''}${o?'off':''}">${o?'':inner}</td>`;}).join('')).join('');
-   const box=`<span class="om-bx" style="width:${bx}mm;height:${bx}mm"></span>`;
+   /* خانة التأشير مستطيل أفقي يملأ عرض عمودها (مع هامش 1.6 مم، وبحد أقصى 10 مم)، فتتسع مساحة التأشير كلما قلّ عدد الحصص المعروضة */
+   const bxW=Math.max(bx,Math.min(colW-1.6,10)).toFixed(2);
+   const box=`<span class="om-bx" style="width:${bxW}mm;height:${bx}mm"></span>`;
    let h=`<table class="om-t" style="font-size:${fs}pt"><colgroup><col style="width:${rkW}mm"><col style="width:${nmW}mm">${'<col>'.repeat(ncol)}</colgroup>
    <tr style="height:${rh}mm"><th rowspan="2">ر.ت</th><th rowspan="2">الاسم الكامل</th>${days.map(x=>`<th colspan="${per(x).length}" class="dd">${x.d}${t.showDates?' '+fmtD(omrDt(D,x.i)).slice(0,5):''}</th>`).join('')}</tr>
    <tr style="height:${vh}mm">${days.map(x=>per(x).map((p,j)=>`<th class="${AM.includes(p)?'':'pm '}${j===per(x).length-1?'dd':''}" style="vertical-align:middle;height:${vh}mm"><span class="om-v" data-h="${vh-1.2}" style="font-size:${Math.min(6.5,(vh-1.4)/(String(p).length*0.2)).toFixed(2)}pt">${esc(p)}</span></th>`).join('')).join('')}</tr>`;
@@ -4395,7 +4397,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </script>
 
 <script>/* PWA: تحديث متحكَّم فيه — إشعار بالتحديث وتطبيقه بإذن المستعمل، وطلب تخزين دائم للمعطيات */
-const APP_VERSION='1.15.3';let MKB_REG=null;
+const APP_VERSION='1.15.4';let MKB_REG=null;
 async function mkbUpdNotes(){try{return await (await fetch('./version.json?t='+Date.now(),{cache:'no-store'})).json();}catch(e){return null;}}
 async function mkbUpdShow(w){if(!w)return;const v=await mkbUpdNotes()||{};
  if(v.version&&v.version===APP_VERSION){w.postMessage('skip');return;}
