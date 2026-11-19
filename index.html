@@ -3547,6 +3547,12 @@ function dirFix(){if(S&&S.school&&S.school.direction){const c=dirClean(S.school.
 if(dirFix())save();
 (()=>{const _sv=save;save=function(){dirFix();return _sv.apply(this,arguments);};})();
 
+/* ================= جداول الحصص: زر «تأكيد وحفظ» في أعلى الصفحة بجانب زري الاستيراد، يظهر بعد استيراد ملف ================= */
+(()=>{const base=V.timetable;V.timetable=(...a)=>{const h=base(...a);if(!ttPrev||!ttPrev.list||!ttPrev.list.length)return h;
+ const anchor=`<button class="btn" onclick="ttImport('xlsx')">📊 من Excel</button>`;if(h.indexOf(anchor)<0)return h;
+ const btns=`<button class="btn gold tt-pulse" onclick="ttApply()">✔ تأكيد وحفظ ${ttPrev.list.length} جدولا</button><button class="btn out" onclick="ttPrev=null;go('timetable')">إلغاء الاستيراد</button>`;
+ return `<style>@keyframes ttPulse{0%,100%{box-shadow:0 0 0 0 rgba(176,141,87,.7)}50%{box-shadow:0 0 0 7px rgba(176,141,87,0)}}.tt-pulse{animation:ttPulse 1.6s ease-in-out infinite}</style>`+h.replace(anchor,anchor+btns);};})();
+
 /* ================= الترخيص: رخصة موقعة رقميا مرتبطة بالجهاز (Ed25519) — دون الرخصة: وضع القراءة فقط ================= */
 const LIC_PK='fb5dMC8n8pPkRZ0raTtJKs4FR+RQu+a2eKXT2e7IQPs=';
 const b64d=s=>{s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;};
