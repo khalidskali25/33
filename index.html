@@ -3433,13 +3433,13 @@ function omrPages(cls,D,type){const t=AB(),AM=S.settings.periodsAM,PM=S.settings
     <div class="om-mark">مواكبة · ورقة مقروءة آليا — لا تُطوى ولا تُدبَّس ولا يُكتب على المربعات والعلامات السوداء</div>`,data:`slip|${cl}|${isoOf(D)}`});
    return;}
   const reg=type==='slip'||type==='sliph';
-  /* سجل أوراق الدخول: عند توفر جدول حصص للقسم تُعرض الحصص الفعلية فقط؛ وإلا تبقى كل حصص اليوم */
-  const hasTT=reg&&((S.ttd&&S.ttd[cl]&&Object.keys(S.ttd[cl]).length)||(S.timetable&&S.timetable[cl]&&S.timetable[cl].length===6));
+  /* الأوراق الرقمية (أوراق الغياب وسجل أوراق الدخول): عند توفر جدول حصص للقسم تُعرض الحصص المقررة فقط، فتتسع الأعمدة؛ وإلا تبقى كل حصص اليوم */
+  const hasTT=((S.ttd&&S.ttd[cl]&&Object.keys(S.ttd[cl]).length)||(S.timetable&&S.timetable[cl]&&S.timetable[cl].length===6));
   const perR=x=>hasTT?P.filter(p=>(tt[x.i]||[]).includes(p)):(x.i===5&&!t.satPM?AM:P);
   const selR=hasTT?sel.filter(x=>perR(x).length):sel;const nColW=selR.reduce((a,x)=>a+perR(x).length,0);
   /* قاعدة: الأوراق الأسبوعية أفقية دائما، ونصف الأسبوعية عمودية */const land=type==='full'||type==='slip';const wkP=type==='slip'&&!land;
   if(!selR.length)return;const parts=(land||wkP)?[selR]:[selR.slice(0,Math.ceil(selR.length/2)),selR.slice(Math.ceil(selR.length/2))].filter(p=>p.length);
-  parts.forEach((days,pi)=>{const per=x=>reg?perR(x):(x.i===5&&!t.satPM?AM:P);const ncol=days.reduce((a,x)=>a+per(x).length,0);
+  parts.forEach((days,pi)=>{const per=perR;const ncol=days.reduce((a,x)=>a+per(x).length,0);
    const W=land?297:210,H=land?209.5:296.5,inner=W-22,nmW=land?38:44,rkW=land?5.5:6,colW=(inner-nmW-rkW)/ncol;
    const avail=H-20-46-(t.teacherRow&&!reg?9:0)-(t.sign1||t.sign2?10:0),rh=Math.max(2.9,Math.min(4.8,avail/(nRows+2)));
    const bx=Math.max(2.2,Math.min(3.6,rh-1,colW-1.4)),fs=land?6.2:7,lbl=p=>land?String(p).split('-')[0]:p;
