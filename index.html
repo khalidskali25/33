@@ -3488,11 +3488,14 @@ function MSR_CORE(rootDoc, text, mode){
   function hourMap(tr){var tb=tr.closest&&tr.closest('table');if(!tb)return null;if(tb.__hm!==undefined)return tb.__hm;var hm=null,rs=tb.querySelectorAll('tr');
    for(var i=0;i<rs.length&&!hm;i++){var cs=rs[i].children,idx=0,m={},n=0;for(var c=0;c<cs.length;c++){var t=norm(cs[c].textContent).replace(/\s/g,''),mm=t.match(/^(\d{1,2})(?:h|H|:00)?-(\d{1,2})/);
     if(mm&&!cs[c].querySelector('input')){var h1=+mm[1],h2=+mm[2];if(h2===h1+1){m[h1]=idx;n++;}else if(h1===h2+1){m[h2]=idx;n++;}}idx+=cs[c].colSpan||1;}if(n>=4)hm=m;}tb.__hm=hm;return hm;}
-  function setType(tr,just){var ss=tr.querySelectorAll('select');for(var i=0;i<ss.length;i++){var se=ss[i];if(se.offsetParent===null&&se.style.display==='none')continue;
-    if(se.value&&se.selectedIndex>0)return 'ok';var best=-1;for(var k=0;k<se.options.length;k++){var t=norm(se.options[k].text);if(!se.options[k].value&&!t)continue;
-     var isNon=/غير\s*مبرر|non\s*justif/i.test(t),isJ=!isNon&&/مبرر|justif/i.test(t);if(just?isJ:isNon){best=k;break;}if(best<0&&se.options[k].value&&k>0)best=k;}
-    if(best>=0){se.selectedIndex=best;se.dispatchEvent(new Event('input',{bubbles:true}));se.dispatchEvent(new Event('change',{bubbles:true}));if(window.jQuery){try{jQuery(se).trigger('change');}catch(e){}}return 'set';}}
-   return tr.querySelector('input[type=text],input:not([type])')?'input':'none';}
+  function setType(tr,just){var ss=tr.querySelectorAll('select'),res='none';
+   for(var i=0;i<ss.length;i++){var se=ss[i];if(se.selectedIndex>0&&se.value){res='ok';continue;}var best=-1;
+    for(var k=0;k<se.options.length;k++){var t=norm(se.options[k].text);if(!se.options[k].value&&!t)continue;var isNon=/غير\s*مبرر|non\s*justif/i.test(t),isJ=!isNon&&/مبرر|justif/i.test(t);
+     if(just?isJ:isNon){best=k;break;}if(best<0&&se.options[k].value&&k>0)best=k;}
+    if(best>=0){var v=se.options[best].value;se.selectedIndex=best;se.value=v;
+     ['input','change','blur'].forEach(function(ev){se.dispatchEvent(new Event(ev,{bubbles:true}));});
+     var jq=window.jQuery||window.$;if(jq&&jq.fn){try{jq(se).val(v).trigger('change');if(jq.fn.selectpicker)jq(se).selectpicker('refresh');}catch(e){}}res='set';}}
+   if(res!=='none')return res;var ip=tr.querySelector('input[type=text],input:not([type])');return ip?'input':'none';}
   function cellAt(tr,idx){var cs=tr.children,k=0;for(var c=0;c<cs.length;c++){var sp=cs[c].colSpan||1;if(idx>=k&&idx<k+sp)return cs[c];k+=sp;}return null;}
   function boxFor(tr,s){var h=s+7,hm=hourMap(tr);if(hm&&hm[h]!==undefined){var td=cellAt(tr,hm[h]);var cb=td&&td.querySelector('input[type=checkbox]');if(cb)return{cb:cb,how:'h'};}
    var b=boxes(tr),off=b.length>11?b.length-11:0;return b[s-1+off]?{cb:b[s-1+off],how:off?'o':'n'}:null;}
@@ -3503,10 +3506,10 @@ function MSR_CORE(rootDoc, text, mode){
   rows.forEach(function(tr){var cells=tr.querySelectorAll('td,th');var got=false;for(var c=0;c<cells.length;c++){var t=norm(cells[c].textContent);if(!got&&/^\d{1,3}$/.test(t)){byOrder[String(parseInt(t,10))]=tr;got=true;}var m=t.match(/[A-Za-z]\d{6,12}/);if(m)byCode[m[0].toUpperCase()]=tr;}});
   if(mode==='scan'){
     var dist={},dis={};rows.forEach(function(tr){var b=boxes(tr);dist[b.length]=(dist[b.length]||0)+1;b.forEach(function(x,i){if(x.disabled)dis[i+1]=(dis[i+1]||0)+1;});});
-    var sr=(Object.keys(byCode).length?byCode[Object.keys(byCode)[0]]:rows[0]);var sample='',ty='';if(sr){var se0=sr.querySelector('select');ty=se0?'قائمة: '+Array.prototype.map.call(se0.options,function(o){return (o.value||'∅')+'='+norm(o.text);}).slice(0,10).join(' | '):(sr.querySelector('input[type=text],input:not([type])')?'حقل نصي (ليس قائمة)':'غير موجود');}
+    var sr=(Object.keys(byCode).length?byCode[Object.keys(byCode)[0]]:rows[0]);var sample='',ty='';if(sr){var se0=sr.querySelector('select');var tcell=null,tds0=sr.querySelectorAll('td');for(var q=0;q<tds0.length;q++){if(tds0[q].querySelector('select,input:not([type=checkbox])')){tcell=tds0[q];break;}}var tdesc=tcell?Array.prototype.map.call(tcell.querySelectorAll('*'),function(e){return e.tagName.toLowerCase()+(e.type?'['+e.type+']':'')+(e.className&&typeof e.className==='string'?'.'+e.className.split(/\s+/).slice(0,2).join('.'):'')+(e.style&&e.style.display==='none'?'(مخفي)':'');}).slice(0,8).join(' > '):'—';ty=(se0?'قائمة: '+Array.prototype.map.call(se0.options,function(o){return (o.value||'∅')+'='+norm(o.text);}).slice(0,10).join(' | '):(sr.querySelector('input[type=text],input:not([type])')?'حقل نصي (ليس قائمة)':'غير موجود'))+'\nعناصر الخانة: '+tdesc;}
     if(sr){var cs=sr.querySelectorAll('td,th'),parts=[];for(var c=0;c<cs.length;c++){var t=norm(cs[c].textContent),cb=cs[c].querySelectorAll('input[type=checkbox]').length,sel=cs[c].querySelector('select');parts.push(cb?'[خانة'+(cb>1?'×'+cb:'')+']':sel?'[قائمة]':/^\d{1,3}$/.test(t)?'رقم':/[A-Za-z]\d{6,}/.test(t)?'رمز':t?'نص('+t.length+')':'فارغ');}sample=parts.join(' | ');}
     var hmS='',r0=null,bc=Object.keys(byCode);if(bc.length)r0=byCode[bc[0]];else r0=rows[0];if(r0){var hm0=hourMap(r0);hmS=hm0?Object.keys(hm0).map(function(k){return k+'→'+hm0[k];}).join(' '):'لم تُكتشف';}
-    return 'تقرير تشخيص – جسر مواكبة/مسار 1.3\nأعمدة الساعات: '+hmS+'\nالعنوان: '+(rootDoc.location?rootDoc.location.pathname:'')+'\nالإطارات: '+D.length+'\nصفوف التلاميذ: '+rows.length+'\nعدد الخانات/صف: '+JSON.stringify(dist)+'\nخانات معطلة حسب الترتيب: '+JSON.stringify(dis)+'\nرقم ترتيب: '+Object.keys(byOrder).length+' | رمز مسار: '+Object.keys(byCode).length+'\nرأس الجدول: '+headers.join(' | ')+'\nصف تلميذ: '+sample+'\nنوع الغياب: '+ty;
+    return 'تقرير تشخيص – جسر مواكبة/مسار 1.4\nأعمدة الساعات: '+hmS+'\nالعنوان: '+(rootDoc.location?rootDoc.location.pathname:'')+'\nالإطارات: '+D.length+'\nصفوف التلاميذ: '+rows.length+'\nعدد الخانات/صف: '+JSON.stringify(dist)+'\nخانات معطلة حسب الترتيب: '+JSON.stringify(dis)+'\nرقم ترتيب: '+Object.keys(byOrder).length+' | رمز مسار: '+Object.keys(byCode).length+'\nرأس الجدول: '+headers.join(' | ')+'\nصف تلميذ: '+sample+'\nنوع الغياب: '+ty;
   }
   var JST={},plan=[],cls='',lines=String(text||'').split(/\n|;/);
   lines.forEach(function(L){L=norm(L);if(!L)return;
@@ -3533,7 +3536,7 @@ function MSR_PANEL(CORE){
   var old=document.getElementById('jisrPanel');if(old){old.remove();return;}
   var d=document.createElement('div');d.id='jisrPanel';d.dir='rtl';
   d.style.cssText='position:fixed;top:10px;left:10px;right:10px;max-width:430px;margin:auto;z-index:2147483647;background:#fff;border:3px solid #1B4332;border-top:6px solid #B08D57;border-radius:10px;padding:10px;font:14px Tahoma,Arial;color:#222;box-shadow:0 6px 24px rgba(0,0,0,.35)';
-  d.innerHTML='<b style="color:#1B4332">جسر مواكبة → مسار 1.3</b><textarea id="jisrT" placeholder="الصق رمز النقل هنا" style="width:100%;height:90px;margin:6px 0;direction:ltr;font:13px monospace;border:1px solid #999;border-radius:4px"></textarea><div><button data-m="paste">لصق</button> <button data-m="fill">تأشير</button> <button data-m="clear">إلغاء</button> <button data-m="scan">تشخيص</button> <button data-m="x">✕</button></div><pre id="jisrO" style="white-space:pre-wrap;max-height:200px;overflow:auto;background:#f4f4f4;padding:6px;margin:6px 0 0;font:12px Tahoma"></pre>';
+  d.innerHTML='<b style="color:#1B4332">جسر مواكبة → مسار 1.4</b><textarea id="jisrT" placeholder="الصق رمز النقل هنا" style="width:100%;height:90px;margin:6px 0;direction:ltr;font:13px monospace;border:1px solid #999;border-radius:4px"></textarea><div><button data-m="paste">لصق</button> <button data-m="fill">تأشير</button> <button data-m="clear">إلغاء</button> <button data-m="scan">تشخيص</button> <button data-m="x">✕</button></div><pre id="jisrO" style="white-space:pre-wrap;max-height:200px;overflow:auto;background:#f4f4f4;padding:6px;margin:6px 0 0;font:12px Tahoma"></pre>';
   document.body.appendChild(d);
   var bs=d.querySelectorAll('button');for(var i=0;i<bs.length;i++){bs[i].style.cssText='background:#1B4332;color:#fff;border:0;border-radius:5px;padding:7px 10px;margin:2px;font:13px Tahoma';}
   var T=document.getElementById('jisrT'),O=document.getElementById('jisrO');
