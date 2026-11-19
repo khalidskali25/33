@@ -17,6 +17,7 @@ import shutil
 import sys
 
 START, END = '/*@MASSAR{*/', '/*}@MASSAR*/'
+PRIV_START, PRIV_END = '/*@PRIVATE{*/', '/*}@PRIVATE*/'   # ألوان النسخة الخاصة (برتقالي)
 
 # 1) عناصر الجسر داخل تبويب المجموع الشهري — (الأصل، البديل، العدد المتوقع)
 BRIDGE_REPLACEMENTS = [
@@ -40,6 +41,7 @@ NAME_REPLACEMENTS = [
     ('<div class="om-mark">مواكبة ·', '<div class="om-mark">مواكبة G ·', 2),   # الأوراق المقروءة آليا
 ]
 MANIFEST_REPLACEMENTS = [
+    ('"theme_color": "#C2410C"', '"theme_color": "#1B4332"', 1),
     ('"name": "مواكبة — فضاء الحراسة العامة"', '"name": "' + PUBLIC_NAME + ' — فضاء الحراسة العامة"', 1),
     ('"short_name": "مواكبة"', '"short_name": "مواكبة G"', 1),
 ]
@@ -48,7 +50,7 @@ README_REPLACEMENTS = [
 ]
 
 # أي أثر من هذه الآثار في الناتج = فشل البناء
-LEAKS = re.compile(r'MSR_|msr[A-Z]|msmCode|msmT\b|jisr|JM1|JM2|@MASSAR|رمز النقل|شيفرة الزر|زر «مسار»|نحو مسار|جسر')
+LEAKS = re.compile(r'@PRIVATE|#C2410C|MSR_|msr[A-Z]|msmCode|msmT\b|jisr|JM1|JM2|@MASSAR|رمز النقل|شيفرة الزر|زر «مسار»|نحو مسار|جسر')
 
 COPY = ['sw.js', 'version.json', 'manifest.webmanifest', 'README.md', '.nojekyll']
 
@@ -64,7 +66,7 @@ def apply(text, rules, where):
     return text
 
 
-def strip_blocks(html):
+def strip_blocks(html, START=START, END=END, need=True):
     out, pos, n = [], 0, 0
     while True:
         a = html.find(START, pos)
@@ -79,8 +81,8 @@ def strip_blocks(html):
             pos += 1
         n += 1
     out.append(html[pos:])
-    if n == 0:
-        sys.exit('خطأ: لم يُعثر على أي كتلة @MASSAR')
+    if n == 0 and need:
+        sys.exit('خطأ: لم يُعثر على أي كتلة ' + START)
     return ''.join(out), n
 
 
@@ -90,6 +92,10 @@ def main():
     src, dst = sys.argv[1], sys.argv[2]
 
     html, n = strip_blocks(open(os.path.join(src, 'index.html'), encoding='utf-8').read())
+    html, np = strip_blocks(html, PRIV_START, PRIV_END)
+    html = apply(html, [('<meta name="theme-color" content="#C2410C">', '<meta name="theme-color" content="#1B4332">', 1),
+                        ('\n<style></style>', '', 1)], 'index.html')
+    print(f'✓ أُعيدت الألوان الخضراء ({np} كتلة ألوان خاصة)')
     html = apply(html, BRIDGE_REPLACEMENTS, 'index.html')
     print(f'✓ حُذفت {n} كتل و{len(BRIDGE_REPLACEMENTS)} عناصر من تبويب المجموع الشهري')
     html = apply(html, NAME_REPLACEMENTS, 'index.html')
