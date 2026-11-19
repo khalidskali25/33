@@ -3851,7 +3851,9 @@ let LIC=licCheck(localStorage.getItem('mkb_lic')),LIC_READY=false;
 function licBar(){let b=document.getElementById('licBar');if(LIC){if(b)b.remove();return;}
  if(!b){b=document.createElement('div');b.id='licBar';b.style.cssText='position:sticky;top:0;z-index:40;background:#9B2226;color:#fff;text-align:center;padding:7px 10px;font-size:14px;cursor:pointer';b.onclick=()=>licDlg();document.body.insertBefore(b,document.body.firstChild);}
  b.innerHTML='نسخة غير مفعّلة — <b>وضع القراءة فقط</b>: لا يُحفظ أي تعديل ولا تُطبع الوثائق. <u>اضغط هنا للتفعيل</u>';}
-function licCopy(t){const ok=()=>toast('✓ نُسخ');if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,()=>prompt('انسخ:',t));else prompt('انسخ:',t);}
+function licCopy(t){const ok=()=>toast('✓ نُسخ: '+t);
+ const fb=()=>{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,t.length);let done=false;try{done=document.execCommand('copy');}catch(e){}ta.remove();done?ok():prompt('انسخ:',t);};
+ if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,fb);else fb();}
 function licDlg(){let o=document.getElementById('licDlg');if(o)o.remove();const d=licDev();o=document.createElement('div');o.id='licDlg';
  o.style.cssText='position:fixed;inset:0;background:#0008;z-index:400;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:14px';
  o.innerHTML=`<div class="card" style="max-width:520px;width:100%;margin:0;border-top:5px solid #B08D57">
@@ -3867,10 +3869,12 @@ function licDlg(){let o=document.getElementById('licDlg');if(o)o.remove();const 
  <div class="row"><button class="btn" style="background:#25D366" onclick="licWA()">طلب الرخصة عبر واتساب</button><button class="btn out" onclick="licMD()">إرسال الطلب كملف md</button></div>
  <h4 style="margin:12px 0 4px;color:var(--g)">2. التفعيل</h4><p class="muted" style="margin:0 0 4px">الصق الرخصة التي تتوصل بها، ثم اضغط «تفعيل».</p>
  <textarea id="licIn" dir="ltr" placeholder="MKB1...." style="width:100%;min-height:90px;font:13px monospace"></textarea>
- <div class="row"><button class="btn gold" onclick="licApply()">تفعيل</button></div>
+ <div class="row"><button class="btn gold" onclick="licApply()">تفعيل</button><button class="btn" onclick="licQRcam()">📷 مسح رمز QR للرخصة</button><button class="btn out" onclick="document.getElementById('licQRf').click()">🖼️ من صورة QR</button></div>
+ <input type="file" id="licQRf" accept="image/*" style="display:none" onchange="licQRfile(this)">
+ <div id="licQRv" style="display:none;margin:6px 0;text-align:center"><video id="licQRvid" playsinline muted style="width:100%;max-width:360px;border:3px solid #1B4332;border-radius:8px;background:#000"></video><div class="row" style="justify-content:center"><span class="muted">وجّه الكاميرا نحو رمز QR للرخصة…</span><button class="btn out sm" onclick="licQRstop()">إيقاف</button></div></div>
  <p class="muted" style="font-size:12px">الرخصة خاصة بهذا الجهاز. عند تغيير الجهاز، أو مسح بيانات المتصفح، يتغير رمز الجهاز ويلزم طلب رخصة جديدة. احتفظ دائما بنسخة احتياطية من معطياتك.</p>`}
- <div class="row"><button class="btn out" onclick="document.getElementById('licDlg').remove()">إغلاق</button></div></div>`;
- o.addEventListener('click',e=>{if(e.target===o)o.remove();});document.body.appendChild(o);}
+ <div class="row"><button class="btn out" onclick="licQRstop();document.getElementById('licDlg').remove()">إغلاق</button></div></div>`;
+ o.addEventListener('click',e=>{if(e.target===o){licQRstop();o.remove();}});document.body.appendChild(o);}
 const LIC_WA='212620205934';
 function licReq(){const v=i=>((document.getElementById(i)||{}).value||'').trim(),sc=S.school||{};
  const nm=v('licNm'),et=v('licEt'),dr=dirClean(v('licDr'));
@@ -3885,6 +3889,23 @@ async function licMD(){const r=licReq();if(!r)return;
  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'طلب رخصة مواكبة',text:'طلب رخصة تفعيل مواكبة — رمز الجهاز: '+r.dev});return;}}catch(e){if(e&&e.name==='AbortError')return;}
  const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=name;document.body.appendChild(a);a.click();a.remove();
  toast('نُزّل ملف الطلب: أرسله عبر واتساب إلى 0620205934');}
+/* التفعيل بمسح رمز QR للرخصة (يكمّل اللصق اليدوي ولا يعوضه) */
+let licQRS=null,licQRT=0;
+function licQRtext(s){const m=String(s||'').replace(/\s+/g,'').match(/MKB1\.[A-Za-z0-9_\-+\/=]+\.[A-Za-z0-9_\-+\/=]+/);return m?m[0]:null;}
+function licQRuse(s){const t=licQRtext(s);if(!t){toast('هذا الرمز لا يحمل رخصة مواكبة');return false;}licQRstop();const i=document.getElementById('licIn');if(i)i.value=t;licApply();return true;}
+function licQRdecode(data,w,h){const r=jsQR(data,w,h,{inversionAttempts:'attemptBoth'});if(!r)return null;try{return r.binaryData?new TextDecoder().decode(new Uint8Array(r.binaryData)):r.data;}catch(e){return r.data;}}
+function licQRstop(){clearInterval(licQRT);licQRT=0;if(licQRS){licQRS.getTracks().forEach(t=>t.stop());licQRS=null;}const v=document.getElementById('licQRv');if(v)v.style.display='none';}
+async function licQRcam(){if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){toast('الكاميرا غير متاحة هنا: استعمل «من صورة QR»');document.getElementById('licQRf').click();return;}
+ try{licQRS=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});}catch(e){toast('تعذر فتح الكاميرا: استعمل «من صورة QR»');document.getElementById('licQRf').click();return;}
+ const box=document.getElementById('licQRv'),v=document.getElementById('licQRvid');if(!box||!v){licQRstop();return;}box.style.display='block';v.srcObject=licQRS;await v.play().catch(()=>{});
+ const c=document.createElement('canvas'),x=c.getContext('2d',{willReadFrequently:true});
+ licQRT=setInterval(()=>{if(!document.getElementById('licQRvid')){licQRstop();return;}if(!v.videoWidth)return;const k=Math.min(1,800/Math.max(v.videoWidth,v.videoHeight));c.width=Math.round(v.videoWidth*k);c.height=Math.round(v.videoHeight*k);x.drawImage(v,0,0,c.width,c.height);
+  const s=licQRdecode(x.getImageData(0,0,c.width,c.height).data,c.width,c.height);if(s&&licQRtext(s))licQRuse(s);},250);}
+function licQRfile(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
+ im.onload=()=>{URL.revokeObjectURL(u);const c=document.createElement('canvas'),x=c.getContext('2d',{willReadFrequently:true});let s=null;
+  for(const M of [1200,1800,800,2600]){const k=Math.min(1,M/Math.max(im.width,im.height));c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);s=licQRdecode(x.getImageData(0,0,c.width,c.height).data,c.width,c.height);if(s)break;}
+  if(!s){toast('لم يُقرأ أي رمز QR في الصورة: قرّب الصورة وأعد المحاولة');return;}licQRuse(s);};
+ im.onerror=()=>{URL.revokeObjectURL(u);toast('تعذر فتح الصورة');};im.src=u;}
 function licApply(){const v=(document.getElementById('licIn')||{}).value||'';const r=licCheck(v);
  if(!r){toast('رخصة غير صالحة لهذا الجهاز');return;}localStorage.setItem('mkb_lic',v.trim().replace(/\s+/g,''));LIC=r;licBar();document.getElementById('licDlg').remove();toast('✓ تم تفعيل مواكبة');go(cur);}
 (()=>{const _sv=save;save=function(){if(LIC)return _sv.apply(this,arguments);
