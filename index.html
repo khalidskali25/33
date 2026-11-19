@@ -128,7 +128,13 @@ table.p td.c{text-align:center}
 .exf{overflow:hidden;white-space:nowrap;line-height:1.08}.exw{overflow:hidden;white-space:normal;line-height:1.08}
 .ttg td{padding:3px}
 </style>
-<style>/*@PRIVATE{*/ /* النسخة الخاصة: برتقالي بدل الأخضر */ :root{--g:#C2410C;--g2:#EA580C} .tpcur{background:#C2410C!important} /*}@PRIVATE*/</style>
+<script>/*@PRIVATE{*/ window.MKB_THEME_DEF='orange'; /* النسخة الخاصة: البرتقالي افتراضيا */ /*}@PRIVATE*/
+/* لون الواجهة (الإعدادات ← لون الواجهة): يغير الشريط العلوي والأزرار والعناوين فقط؛ الوثائق المطبوعة لا تتأثر */
+const MKB_THEMES={green:['أخضر','#1B4332','#2D6A4F'],orange:['برتقالي','#C2410C','#EA580C'],blue:['أزرق','#1E3A8A','#2563EB'],burgundy:['عنابي','#7F1D1D','#991B1B'],violet:['بنفسجي','#4C1D95','#6D28D9'],slate:['رمادي','#334155','#475569']};
+function mkbTheme(){let k='';try{k=localStorage.getItem('mkb_theme')||'';}catch(e){}return MKB_THEMES[k]?k:(window.MKB_THEME_DEF||'green');}
+function mkbThemeApply(k){k=MKB_THEMES[k]?k:mkbTheme();const t=MKB_THEMES[k],r=document.documentElement.style;r.setProperty('--g',t[1]);r.setProperty('--g2',t[2]);
+ const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',t[1]);}
+mkbThemeApply();</script>
 </head>
 <body>
 <header class="top">
@@ -1491,7 +1497,7 @@ function admCounterPrint(){const t=$('#admCnt');if(!t)return;const c=t.cloneNode
 /* ---------- تصحيح أوراق الدخول: تراجع فوري + نافذة بسيطة للحذف والتعديل ---------- */
 function slipDelNo(no){const a=S.admissions.find(x=>x.no===no);if(!a)return;S.admissions=S.admissions.filter(x=>x.no!==no);if(S.seq.adm===no)S.seq.adm--;save();}
 function slipUndoBar(no){let b=$('#undoBar');if(b)b.remove();b=document.createElement('div');b.id='undoBar';
- b.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1B4332;color:#fff;border:1px solid #B08D57;border-radius:10px;padding:10px 14px;z-index:210;display:flex;gap:14px;align-items:center;font-size:15px;box-shadow:0 4px 14px #0004';
+ b.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--g);color:#fff;border:1px solid #B08D57;border-radius:10px;padding:10px 14px;z-index:210;display:flex;gap:14px;align-items:center;font-size:15px;box-shadow:0 4px 14px #0004';
  b.innerHTML=`<span>سُجلت ورقة الدخول رقم ${no}</span><button class="btn gold sm" style="margin:0">↶ تراجع</button>`;
  b.querySelector('button').onclick=()=>{slipDelNo(no);b.remove();toast('أُلغيت الورقة');go(cur);};document.body.appendChild(b);clearTimeout(window._ub);window._ub=setTimeout(()=>b.remove(),9000);}
 function slipList(id){const s=S.students.find(x=>x.id===id);if(!s)return;const L=slipsOf(id).slice().reverse();let ov=$('#slipOv');if(ov)ov.remove();
@@ -1550,7 +1556,7 @@ function slipBulkSave(cls,date,print){const sel=[...document.querySelectorAll('.
  if(print)doPrint(`<div class="pg"><div class="slips">${made.map(a=>slip({...a,names:a.ids.map(i=>fullName(S.students.find(s=>s.id===i)||{}))})).join('')}</div></div>`);
  go(cur);slipUndoMany(made.map(a=>a.no));}
 function slipUndoMany(nos){if(nos.length===1)return slipUndoBar(nos[0]);let b=$('#undoBar');if(b)b.remove();b=document.createElement('div');b.id='undoBar';
- b.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1B4332;color:#fff;border:1px solid #B08D57;border-radius:10px;padding:10px 14px;z-index:210;display:flex;gap:14px;align-items:center;font-size:15px;box-shadow:0 4px 14px #0004';
+ b.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--g);color:#fff;border:1px solid #B08D57;border-radius:10px;padding:10px 14px;z-index:210;display:flex;gap:14px;align-items:center;font-size:15px;box-shadow:0 4px 14px #0004';
  b.innerHTML=`<span>سُجلت ${nos.length} أوراق دخول</span><button class="btn gold sm" style="margin:0">↶ تراجع عن الكل</button>`;
  b.querySelector('button').onclick=()=>{nos.slice().reverse().forEach(slipDelNo);b.remove();toast('أُلغيت الأوراق');go(cur);};document.body.appendChild(b);clearTimeout(window._ub);window._ub=setTimeout(()=>b.remove(),12000);}
 (()=>{const base=V.register;V.register=(...a)=>{const h=base(...a);const btn=`<button class="btn gold sm" onclick="slipBulkDlg()">أوراق دخول جماعية</button>`;
@@ -3222,7 +3228,7 @@ function stView(){const st=classStudents(rgC);if(!st.length)return '<div class="
    U.abs+=n;C.abs+=n;R.abs+=n;M.abs+=n;if(x.j){U.just+=n;C.just+=n;R.just+=n;}else{U.unj+=n;C.unj+=n;R.unj+=n;M.unj+=n;}});});
  return R;};})();
 (()=>{const s=document.createElement('style');s.textContent=`.tpt tr.tpon td.tpnm{background:#FFF3D6!important;box-shadow:inset 0 2px 0 #B08D57,inset 0 -2px 0 #B08D57;font-weight:bold;color:#1B4332}.tpt tr.tpon td.tpnm:first-child{box-shadow:inset 0 2px 0 #B08D57,inset 0 -2px 0 #B08D57,inset -3px 0 0 #B08D57}.tpt tr.tpon td.tpnm+td.tpnm{box-shadow:inset 0 2px 0 #B08D57,inset 0 -2px 0 #B08D57,inset 3px 0 0 #B08D57}.tpt tr.tpon .tpin{outline:2px solid #B08D57}
-.tpcur{position:sticky;top:0;z-index:3;background:#1B4332;color:#fff;padding:7px 12px;border-radius:8px;margin:6px 0;font-size:14px}.tpcur b{color:#F3D9A4}`;document.head.appendChild(s);})();
+.tpcur{position:sticky;top:0;z-index:3;background:var(--g);color:#fff;padding:7px 12px;border-radius:8px;margin:6px 0;font-size:14px}.tpcur b{color:#F3D9A4}`;document.head.appendChild(s);})();
 /* ===== ext35: «إدخال مجموع الحصص» — عمود ذهبي لإدخال مجموع الأسبوع مباشرة (يوزَّع آليا على الأيام) + إطار تفاعلي حول التلميذ(ة) ===== */
 function smApproved(){return smWeek(rgD).filter(iso=>smSch(iso).length&&!(typeof smSkip==='function'&&smSkip(iso,rgC)));}
 function smWMax(){return smApproved().reduce((s,iso)=>s+smSch(iso).length,0);}
@@ -3872,7 +3878,7 @@ function licDlg(){let o=document.getElementById('licDlg');if(o)o.remove();const 
  <textarea id="licIn" dir="ltr" placeholder="MKB1...." style="width:100%;min-height:90px;font:13px monospace"></textarea>
  <div class="row"><button class="btn gold" onclick="licApply()">تفعيل</button><button class="btn" onclick="licQRcam()">📷 مسح رمز QR للرخصة</button><button class="btn out" onclick="document.getElementById('licQRf').click()">🖼️ من صورة QR</button></div>
  <input type="file" id="licQRf" accept="image/*" style="display:none" onchange="licQRfile(this)">
- <div id="licQRv" style="display:none;margin:6px 0;text-align:center"><video id="licQRvid" playsinline muted style="width:100%;max-width:360px;border:3px solid #1B4332;border-radius:8px;background:#000"></video><div class="row" style="justify-content:center"><span class="muted">وجّه الكاميرا نحو رمز QR للرخصة…</span><button class="btn out sm" onclick="licQRstop()">إيقاف</button></div></div>
+ <div id="licQRv" style="display:none;margin:6px 0;text-align:center"><video id="licQRvid" playsinline muted style="width:100%;max-width:360px;border:3px solid var(--g);border-radius:8px;background:#000"></video><div class="row" style="justify-content:center"><span class="muted">وجّه الكاميرا نحو رمز QR للرخصة…</span><button class="btn out sm" onclick="licQRstop()">إيقاف</button></div></div>
  <p class="muted" style="font-size:12px">الرخصة خاصة بهذا الجهاز. عند تغيير الجهاز، أو مسح بيانات المتصفح، يتغير رمز الجهاز ويلزم طلب رخصة جديدة. احتفظ دائما بنسخة احتياطية من معطياتك.</p>`}
  <div class="row"><button class="btn out" onclick="licQRstop();document.getElementById('licDlg').remove()">إغلاق</button></div></div>`;
  o.addEventListener('click',e=>{if(e.target===o){licQRstop();o.remove();}});document.body.appendChild(o);}
@@ -4388,9 +4394,9 @@ async function mkbUpdShow(w){if(!w)return;const v=await mkbUpdNotes()||{};
  if(v.version&&v.version===APP_VERSION){w.postMessage('skip');return;}
  if(sessionStorage.getItem('mkbLater')===(v.version||'?'))return;
  let b=document.getElementById('updBar');if(b)b.remove();b=document.createElement('div');b.id='updBar';
- b.style.cssText='position:fixed;left:10px;right:10px;bottom:12px;max-width:560px;margin:auto;z-index:380;background:#fff;border:2px solid #1B4332;border-top:5px solid #B08D57;border-radius:10px;padding:12px 14px;box-shadow:0 6px 22px #0005;font-size:14px;direction:rtl';
+ b.style.cssText='position:fixed;left:10px;right:10px;bottom:12px;max-width:560px;margin:auto;z-index:380;background:#fff;border:2px solid var(--g);border-top:5px solid #B08D57;border-radius:10px;padding:12px 14px;box-shadow:0 6px 22px #0005;font-size:14px;direction:rtl';
  const esc2=t=>String(t||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
- b.innerHTML=`<b style="color:#1B4332">تحديث جديد متاح${v.version?' — الإصدار '+esc2(v.version):''}</b>${v.date?` <span style="color:#777;font-size:12px">(${esc2(v.date)})</span>`:''}
+ b.innerHTML=`<b style="color:var(--g)">تحديث جديد متاح${v.version?' — الإصدار '+esc2(v.version):''}</b>${v.date?` <span style="color:#777;font-size:12px">(${esc2(v.date)})</span>`:''}
  <div style="font-size:12px;color:#555;margin:2px 0 6px">نسختك الحالية: ${APP_VERSION}. لن يُطبَّق التحديث إلا بإذنك، ومعطياتك لا تتأثر به.</div>
  ${(v.notes||[]).length?`<ul style="margin:4px 0 8px;padding-right:18px;line-height:1.7">${v.notes.map(n=>'<li>'+esc2(n)+'</li>').join('')}</ul>`:''}
  <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn gold" id="updNow">تحديث الآن</button><button class="btn out" id="updBk">نسخة احتياطية أولا</button><button class="btn out" id="updLater">لاحقا</button></div>`;
@@ -4407,6 +4413,9 @@ if('serviceWorker' in navigator&&window.isSecureContext&&/^https?:$/.test(locati
  let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rl)return;rl=true;location.reload();});
  setInterval(()=>reg.update().catch(()=>{}),3*3600e3);}catch(e){}});}
 if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(()=>{});}
+/* بطاقة «لون الواجهة» في الإعدادات */
+function mkbThemeSet(k){try{localStorage.setItem('mkb_theme',k);}catch(e){}mkbThemeApply(k);toast('✓ لون الواجهة: '+MKB_THEMES[k][0]);go('settings');}
+(()=>{try{if(typeof V!=="undefined"&&V.settings){const b=V.settings;V.settings=(...a)=>{const cur=mkbTheme();return b(...a)+`<div class="card"><h3>🎨 لون الواجهة</h3><p class="muted">يغير لون الشريط العلوي والأزرار والعناوين في هذا الجهاز. الوثائق المطبوعة لا تتأثر.</p><div class="row" style="gap:8px">${Object.entries(MKB_THEMES).map(([k,t])=>`<button class="btn" onclick="mkbThemeSet('${k}')" style="background:${t[1]};min-width:92px;${k===cur?'outline:3px solid #B08D57;outline-offset:2px;font-weight:bold':''}">${k===cur?'✓ ':''}${t[0]}${k===(window.MKB_THEME_DEF||'green')?' (افتراضي)':''}</button>`).join('')}</div></div>`;};}}catch(e){}})();
 /* بطاقة الإصدار في الإعدادات */
 (()=>{try{if(typeof V!=="undefined"&&V.settings){const b=V.settings;V.settings=(...a)=>b(...a)+`<div class="card"><h3>إصدار التطبيق</h3><p>الإصدار الحالي: <b>${APP_VERSION}</b></p><p class="muted">التحديثات لا تُطبَّق تلقائيا: عند توفر إصدار جديد يظهر إشعار بما فيه، وتختار أنت وقت تطبيقه.</p><button class="btn" onclick="mkbUpdCheck(true)">التحقق من التحديثات</button></div>`;}}catch(e){}})();
 </script>
