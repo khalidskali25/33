@@ -3428,7 +3428,7 @@ function omrPages(cls,D,type){const t=AB(),AM=S.settings.periodsAM,PM=S.settings
   const hasTT=reg&&((S.ttd&&S.ttd[cl]&&Object.keys(S.ttd[cl]).length)||(S.timetable&&S.timetable[cl]&&S.timetable[cl].length===6));
   const perR=x=>hasTT?P.filter(p=>(tt[x.i]||[]).includes(p)):(x.i===5&&!t.satPM?AM:P);
   const selR=hasTT?sel.filter(x=>perR(x).length):sel;const nColW=selR.reduce((a,x)=>a+perR(x).length,0);
-  const land=type==='full'||(type==='slip'&&!(hasTT&&nColW<=30));const wkP=type==='slip'&&!land;
+  /* قاعدة: الأوراق الأسبوعية أفقية دائما، ونصف الأسبوعية عمودية */const land=type==='full'||type==='slip';const wkP=type==='slip'&&!land;
   if(!selR.length)return;const parts=(land||wkP)?[selR]:[selR.slice(0,Math.ceil(selR.length/2)),selR.slice(Math.ceil(selR.length/2))].filter(p=>p.length);
   parts.forEach((days,pi)=>{const per=x=>reg?perR(x):(x.i===5&&!t.satPM?AM:P);const ncol=days.reduce((a,x)=>a+per(x).length,0);
    const W=land?297:210,H=land?209.5:296.5,inner=W-22,nmW=land?38:44,rkW=land?5.5:6,colW=(inner-nmW-rkW)/ncol;
