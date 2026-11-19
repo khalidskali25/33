@@ -1273,8 +1273,11 @@ function excelPage(cl,st,days,per,D,sem,o){const t=AB(),c=ABC(),sc=S.school,AM=S
  const parts=mode==='full'?[sel]:[sel.slice(0,Math.ceil(sel.length/2)),sel.slice(Math.ceil(sel.length/2))].filter(p=>p.length);
  const o=mode==='full'?t.orientFull:t.orientHalf;const per=x=>x.i===5&&!t.exSatPM?AM:[...AM,...PM];const pages=[];
  cls.forEach(cl=>{const st=classStudents(cl);parts.forEach(days=>pages.push(excelPage(cl,st,days,per,D,sem,o)));});return pages;};})();
-function exFit(root){root.querySelectorAll('.exf').forEach(d=>{let fs=parseFloat(getComputedStyle(d).fontSize),n=0;while(d.scrollWidth>d.clientWidth+1&&n++<40&&fs>3){fs*=.93;d.style.fontSize=fs.toFixed(2)+'px';}});
- root.querySelectorAll('.exw').forEach(d=>{const td=d.parentElement,tr=td.parentElement;let fs=parseFloat(getComputedStyle(d).fontSize),n=0;const H=parseFloat(td.getAttribute('rowspan')||1)*tr.getBoundingClientRect().height;while(d.scrollHeight>H-1&&n++<40&&fs>3){fs*=.93;d.style.fontSize=fs.toFixed(2)+'px';}});}
+/* تصغير الخط حتى يدخل النص خانته — القياس دفعة واحدة ثم الكتابة دفعة واحدة في كل جولة (بدل إعادة حساب التخطيط عند كل خانة) */
+function exFit(root){let A=[...root.querySelectorAll('.exf')].map(d=>({d,fs:parseFloat(getComputedStyle(d).fontSize)}));
+ for(let n=0;n<40&&A.length;n++){A=A.filter(o=>o.fs>3&&o.d.scrollWidth>o.d.clientWidth+1);A.forEach(o=>{o.fs*=.93;o.d.style.fontSize=o.fs.toFixed(2)+'px';});}
+ let B=[...root.querySelectorAll('.exw')].map(d=>{const td=d.parentElement,tr=td.parentElement;return{d,fs:parseFloat(getComputedStyle(d).fontSize),H:parseFloat(td.getAttribute('rowspan')||1)*tr.getBoundingClientRect().height};});
+ for(let n=0;n<40&&B.length;n++){B=B.filter(o=>o.fs>3&&o.d.scrollHeight>o.H-1);B.forEach(o=>{o.fs*=.93;o.d.style.fontSize=o.fs.toFixed(2)+'px';});}}
 (()=>{const base=printAbs;printAbs=function(){const t=AB();if(t.design!=='excel')return base();const a=abArgs();const p=absPages(a.cls,a.D,a.mode,a.sem);if(!p.length){toast('اختر يوما واحدا على الأقل');return;}
  const o=a.mode==='full'?t.orientFull:t.orientHalf;const P=$('#print');P.innerHTML=p.map(x=>`<div class="pg" style="overflow:hidden">${x}</div>`).join('');P.style.cssText='display:block;position:absolute;left:-30000px;top:0';exFit(P);const html=P.innerHTML;P.style.cssText='';
  doPrint(`<style>@page{size:A4 ${o};margin:3mm 6mm 3mm 3mm}</style>`+html);};})();
@@ -3464,10 +3467,14 @@ function omrWrap(p){return `<div class="pg om-pg${p.land?' land':''}" data-omr="
 function omrFit(root){root.querySelectorAll('.om-pg').forEach(pg=>{const inn=pg.querySelector('.om-in');if(!inn)return;const land=pg.classList.contains('land');
  const W=((land?297:210)-22)*MM,H=((land?209.5:296.5)-20)*MM;inn.style.zoom=1;inn.style.width=W+'px';
  /* تصغير خط التوقيت العمودي حتى يدخل في ارتفاع خانة العنوان الثابت */
- inn.querySelectorAll('.om-v').forEach(v=>{const lim=parseFloat(v.dataset.h)*MM;let f=parseFloat(v.style.fontSize)||6;for(let i=0;i<12&&v.offsetHeight>lim&&f>3;i++){f-=0.25;v.style.fontSize=f+'pt';}});
+ /* (قراءة كل القياسات دفعة واحدة ثم الكتابة دفعة واحدة، لتفادي إعادة حساب تخطيط الجدول عند كل خانة) */
+ let VL=[...inn.querySelectorAll('.om-v')].map(v=>({v,lim:parseFloat(v.dataset.h)*MM,f:parseFloat(v.style.fontSize)||6}));
+ for(let it=0;it<12&&VL.length;it++){VL.forEach(o=>o.h=o.v.offsetHeight);VL=VL.filter(o=>o.h>o.lim&&o.f>3);
+  VL.forEach(o=>{const g=it===0?Math.floor(o.f*o.lim/o.h*4)/4:o.f-0.25;o.f=Math.max(3,Math.min(o.f-0.25,g));o.v.style.fontSize=o.f+'pt';});}
  /* تمديد: توزيع المساحة الفارغة أسفل الصفحة على صفوف التلاميذ، فتكبر الخانات والمربعات (طولا) بشكل تناسبي */
  const R=[...inn.querySelectorAll('tr.om-r')];if(R.length){const free=H-inn.scrollHeight-2*MM;if(free>0){const r0=R[0].getBoundingClientRect().height,add=Math.min(free/R.length,9*MM-r0);
-  if(add>0)R.forEach(tr=>{const h=tr.getBoundingClientRect().height+add;tr.style.height=h+'px';tr.querySelectorAll('.om-bx').forEach(b=>{b.style.height=Math.max(b.offsetHeight,Math.min(h-1.3*MM,7*MM))+'px';});});}}
+  if(add>0){const M=R.map(tr=>({tr,h:tr.getBoundingClientRect().height+add,bx:[...tr.querySelectorAll('.om-bx')].map(b=>[b,b.offsetHeight])}));
+   M.forEach(m=>{m.tr.style.height=m.h+'px';const bh=Math.min(m.h-1.3*MM,7*MM);m.bx.forEach(([b,oh])=>{b.style.height=Math.max(oh,bh)+'px';});});}}}
  for(let it=0;it<5;it++){const z=parseFloat(inn.style.zoom)||1,hh=inn.scrollHeight*z;if(hh<=H)break;const nz=z*H/hh*0.99;inn.style.zoom=nz;inn.style.width=(W/nz)+'px';}});}
 V.omr=()=>title('أوراق الغياب الرقمية','أوراق ورقية بمربعات تُؤشَّر باليد، مصممة لتُقرأ لاحقا بتصويرها بالهاتف. تكمّل «أوراق الغياب» الأصلية ولا تعوّضها.')+needData()+
  `<div class="card"><h3>نوع الورقة</h3><div class="row">${Object.entries(OMR_TYPES).map(([k,l])=>`<button class="btn ${omrT===k?'':'out'}" onclick="omrT='${k}';go('omr')">${l}</button>`).join('')}</div>
@@ -4388,7 +4395,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </script>
 
 <script>/* PWA: تحديث متحكَّم فيه — إشعار بالتحديث وتطبيقه بإذن المستعمل، وطلب تخزين دائم للمعطيات */
-const APP_VERSION='1.15.2';let MKB_REG=null;
+const APP_VERSION='1.15.3';let MKB_REG=null;
 async function mkbUpdNotes(){try{return await (await fetch('./version.json?t='+Date.now(),{cache:'no-store'})).json();}catch(e){return null;}}
 async function mkbUpdShow(w){if(!w)return;const v=await mkbUpdNotes()||{};
  if(v.version&&v.version===APP_VERSION){w.postMessage('skip');return;}
