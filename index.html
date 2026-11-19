@@ -3757,6 +3757,39 @@ function omrCells(im,m,H){const box=(x,y,w,h)=>{const e=Math.min(w,h)*0.13;let m
  await new Promise(r=>setTimeout(r,30));let res;try{res=omrRead(omrImg(img,2200),omrGray(img,4200));}catch(e){res={err:'خطأ أثناء القراءة: '+e.message};}
  omrReview(res,img.src,f.name);};})();
 
+/* ================= تصفير معطيات الغياب وإعادة الحساب من الصفر =================
+   العدادات والإحصاءات لا تُخزَّن منفصلة: تُحسب في كل مرة من السجلات (سجل الغياب اليومي، أوراق الدخول...).
+   لذلك «التصفير» = حذف السجلات المختارة (مع نسخة احتياطية إلزامية قبله)، فتُعاد كل الحسابات آليا من الصفر. */
+function rzCard(){const y=new Date(),a=y.getMonth()>=8?y.getFullYear():y.getFullYear()-1;
+ return `<div class="card" style="border-top:4px solid #9B2226"><h3>تصفير معطيات الغياب وإعادة الحساب</h3>
+ <p class="muted">العدادات (ساعات الغياب، المجاميع، النسب، نقطة المواظبة، الإحصاءات) تُحسب آليا من السجلات. لتصفيرها تُحذف السجلات المختارة، فتُعاد كل الحسابات من الصفر. تبقى اللوائح والأقسام وجداول الحصص والإعدادات كما هي.</p>
+ <div class="row"><div class="fld"><label>من</label><input type="date" id="rzF" value="${a}-09-01"></div><div class="fld"><label>إلى</label><input type="date" id="rzT" value="${a+1}-07-31"></div>
+ <div class="fld"><label>القسم</label><select id="rzC">${classOpts('',true)}</select></div></div>
+ <div style="line-height:2">${[['absLog','سجل الغياب اليومي (الغيابات والتأخرات والتبريرات)',1],['admissions','أوراق الدخول',0],['absTot','مجاميع الحصص المدخلة يدويا',0],['absSkip','الأيام المستثناة من الاحتساب',0],['monthly','إحصاء الغياب الشهري للمؤسسة (يُصفَّر كاملا)',0],['omr','خرائط أوراق الغياب الرقمية وسجل قراءتها',0]].map(([k,l,c])=>`<label style="display:block"><input type="checkbox" class="rzK" value="${k}" ${c?'checked':''} style="width:auto"> ${l}</label>`).join('')}</div>
+ <div class="row" style="margin-top:6px"><button class="btn red" onclick="rzRun()">تصفير وإعادة الحساب</button><span class="muted">تُنزَّل نسخة احتياطية تلقائيا قبل التصفير.</span></div></div>`;}
+async function rzRun(){const f=$('#rzF').value,t=$('#rzT').value,c=$('#rzC').value,K=[...document.querySelectorAll('.rzK:checked')].map(x=>x.value);
+ if(!K.length){toast('اختر ما تريد تصفيره');return;}if(!f||!t||f>t){toast('تحقق من الفترة');return;}
+ const inR=d=>d&&d>=f&&d<=t,okC=x=>!c||x===c;let n={absLog:0,admissions:0,absTot:0,absSkip:0,monthly:0,omr:0};
+ /* معاينة العدد قبل التأكيد */
+ Object.entries(S.absLog||{}).forEach(([d,C])=>{if(inR(d))Object.keys(C).forEach(k=>{if(okC(k))n.absLog++;});});
+ (S.admissions||[]).forEach(a=>{if(inR(a.date)&&okC(a.classe))n.admissions++;});
+ Object.values(S.absTot||{}).forEach(r=>{if(okC(r.c)&&r.from>=f&&r.to<=t)n.absTot++;});
+ Object.entries(S.absSkip||{}).forEach(([d,L])=>{if(inR(d))n.absSkip+=L.filter(okC).length;});
+ n.monthly=Object.keys(S.monthly||{}).length;n.omr=Object.keys(S.omrMaps||{}).length+Object.keys(S.omrDone||{}).length;
+ const lbl={absLog:'يوم-قسم في سجل الغياب',admissions:'ورقة دخول',absTot:'مجموع يدوي',absSkip:'استثناء',monthly:'شهر في الإحصاء الشهري',omr:'خريطة/قراءة'};
+ const msg='سيُحذف نهائيا ('+(c||'كل الأقسام')+'، من '+fmtD(f)+' إلى '+fmtD(t)+'):\n'+K.map(k=>'• '+n[k]+' '+lbl[k]).join('\n')+'\n\nستُنزَّل نسخة احتياطية أولا. للتأكيد اكتب: تصفير';
+ if(prompt(msg)!=='تصفير'){toast('أُلغي التصفير');return;}
+ let bk=true;try{const r=await backup();if(r===false)bk=false;}catch(e){bk=false;}
+ if(!bk&&!confirm('لم تُحفظ النسخة الاحتياطية. هل تواصل التصفير دون نسخة احتياطية؟')){toast('أُلغي التصفير');return;}
+ if(K.includes('absLog'))Object.keys(S.absLog||{}).forEach(d=>{if(!inR(d))return;const C=S.absLog[d];Object.keys(C).forEach(k=>{if(okC(k))delete C[k];});if(!Object.keys(C).length)delete S.absLog[d];});
+ if(K.includes('admissions'))S.admissions=(S.admissions||[]).filter(a=>!(inR(a.date)&&okC(a.classe)));
+ if(K.includes('absTot'))Object.keys(S.absTot||{}).forEach(k=>{const r=S.absTot[k];if(okC(r.c)&&r.from>=f&&r.to<=t)delete S.absTot[k];});
+ if(K.includes('absSkip'))Object.keys(S.absSkip||{}).forEach(d=>{if(!inR(d))return;S.absSkip[d]=S.absSkip[d].filter(x=>!okC(x));if(!S.absSkip[d].length)delete S.absSkip[d];});
+ if(K.includes('monthly'))S.monthly={};
+ if(K.includes('omr')){S.omrMaps={};S.omrDone={};}
+ save();toast('تم التصفير، وأُعيد الحساب من الصفر');setTimeout(()=>go('home'),300);}
+(()=>{const b=V.settings;V.settings=(...a)=>b(...a)+rzCard();})();
+
 /* ================= الترخيص: رخصة موقعة رقميا مرتبطة بالجهاز (Ed25519) — دون الرخصة: وضع القراءة فقط ================= */
 const LIC_PK='fb5dMC8n8pPkRZ0raTtJKs4FR+RQu+a2eKXT2e7IQPs=';
 const b64d=s=>{s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;};
