@@ -244,8 +244,12 @@ function fitPages(root,orient){const W=(orient==='landscape'?281:194)*MM,H=(orie
   let s=Math.min(1,H/inn.scrollHeight,W/inn.scrollWidth);inn.style.zoom=s;inn.style.width=(W/s)+'px';
   if(inn.scrollHeight*s>H){s=s*H/(inn.scrollHeight*s)*0.99;inn.style.zoom=s;inn.style.width=(W/s)+'px';}
   pg.style.height=H+'px';pg.style.width=W+'px';pg.dataset.scale=Math.round(s*100);});}
-function doPrint(html,orient){const p=$('#print');p.innerHTML=html;if(orient){p.style.cssText='display:block;position:absolute;left:-30000px;top:0';fitPages(p,orient);p.style.cssText='';}setTimeout(()=>window.print(),150);}
-window.addEventListener('afterprint',()=>{$('#print').innerHTML='';});
+function doPrint(html,orient){const p=$('#print');p.innerHTML=html;if(orient){p.style.cssText='display:block;position:absolute;right:-30000px;left:auto;top:0';fitPages(p,orient);p.style.cssText='';}setTimeout(()=>window.print(),150);}
+window.addEventListener('afterprint',()=>{$('#print').innerHTML='';vpReset();});
+/* الهاتف: بعد نافذة الطباعة/PDF أو عند الرجوع قد يبقى العرض مكبَّرا أو مشوَّها — إعادة ضبط مقياس الشاشة */
+function vpReset(){const m=document.querySelector('meta[name=viewport]');if(!m)return;const c='width=device-width, initial-scale=1';m.setAttribute('content',c+', maximum-scale=1');setTimeout(()=>m.setAttribute('content',c),350);}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const P=$('#print');if(P&&!P.style.cssText)P.innerHTML='';vpReset();}});
+window.addEventListener('popstate',()=>setTimeout(vpReset,50));
 
 /* ================= NAV ================= */
 const MODS=[
@@ -1279,7 +1283,7 @@ function exFit(root){let A=[...root.querySelectorAll('.exf')].map(d=>({d,fs:pars
  let B=[...root.querySelectorAll('.exw')].map(d=>{const td=d.parentElement,tr=td.parentElement;return{d,fs:parseFloat(getComputedStyle(d).fontSize),H:parseFloat(td.getAttribute('rowspan')||1)*tr.getBoundingClientRect().height};});
  for(let n=0;n<40&&B.length;n++){B=B.filter(o=>o.fs>3&&o.d.scrollHeight>o.H-1);B.forEach(o=>{o.fs*=.93;o.d.style.fontSize=o.fs.toFixed(2)+'px';});}}
 (()=>{const base=printAbs;printAbs=function(){const t=AB();if(t.design!=='excel')return base();const a=abArgs();const p=absPages(a.cls,a.D,a.mode,a.sem);if(!p.length){toast('اختر يوما واحدا على الأقل');return;}
- const o=a.mode==='full'?t.orientFull:t.orientHalf;const P=$('#print');P.innerHTML=p.map(x=>`<div class="pg" style="overflow:hidden">${x}</div>`).join('');P.style.cssText='display:block;position:absolute;left:-30000px;top:0';exFit(P);const html=P.innerHTML;P.style.cssText='';
+ const o=a.mode==='full'?t.orientFull:t.orientHalf;const P=$('#print');P.innerHTML=p.map(x=>`<div class="pg" style="overflow:hidden">${x}</div>`).join('');P.style.cssText='display:block;position:absolute;right:-30000px;left:auto;top:0';exFit(P);const html=P.innerHTML;P.style.cssText='';
  doPrint(`<style>@page{size:A4 ${o};margin:3mm 6mm 3mm 3mm}</style>`+html);};})();
 (()=>{const base=abPrev;abPrev=function(){base();const el=$('#abPrev');if(el&&AB().design==='excel')exFit(el);};})();
 
@@ -1775,7 +1779,7 @@ function dcPage(t,r,fit){const d=DC[t],v=r?r.v:{},b=!r,sc=S.school,ds=n=>`<span 
  ${stu}${rows?`<table class="dctb">${rows}</table>`:''}${long.map(f=>`<div class="dcbl"><b>${f[1]}:</b>${dcVal(f,v,b)}</div>`).join('')}
  ${place}<div class="dcsg">${d.sg.map(x=>`<div>${x}<div class="dcsgl">الاسم والتوقيع</div></div>`).join('')}</div>${conv}`;
  return fit?`<div class="pg fit dcpg"><div class="fitin">${body}</div></div>`:`<div class="pg dcpg">${body}</div>`;}
-function dcPrint(t,r){const P=$('#print');P.innerHTML=dcPage(t,r,1);P.style.cssText='display:block;position:absolute;left:-30000px;top:0';
+function dcPrint(t,r){const P=$('#print');P.innerHTML=dcPage(t,r,1);P.style.cssText='display:block;position:absolute;right:-30000px;left:auto;top:0';
  const W=188*MM,H=268*MM;P.querySelectorAll('.dcpg').forEach(pg=>{const inn=pg.querySelector('.fitin');inn.style.zoom=1;inn.style.width=W+'px';let z=Math.min(1,H/inn.scrollHeight);for(let it=0;it<6;it++){inn.style.zoom=z;inn.style.width=(W/z)+'px';const hh=inn.scrollHeight*z;if(hh<=H&&(z>=1||hh>H*0.985))break;z=Math.min(1,z*H/hh*0.995);}inn.style.zoom=z;inn.style.width=(W/z)+'px';pg.style.height=H+'px';pg.style.overflow='hidden';pg.style.pageBreakAfter='auto';pg.dataset.scale=Math.round(z*100);});
  P.style.cssText='';setTimeout(()=>window.print(),150);}
 function dcPrev(t,id){const r=id?S.docs.find(x=>x.id===id):null;const w=$('#dcPv');if(!w)return;w.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b>معاينة</b><button class="btn out sm" onclick="$('#dcPv').innerHTML=''">إغلاق</button></div><div class="dcprev">${dcPage(t,r)}</div>`;const pv=w.querySelector('.dcprev'),pg=pv.querySelector('.pg');pg.style.width='194mm';const z=Math.min(1,(pv.clientWidth-18)/pg.offsetWidth);pg.style.zoom=z;w.scrollIntoView({behavior:'smooth'});}
@@ -2094,7 +2098,7 @@ function drPrint(){const [from,to]=drRange(),X=drStats(from,to),R=X.R,day=drMode
   if(!AXS.some(a=>a.items.some(x=>X.days.some(d=>(((S.journal||{})[d]||{}).done||[]).includes(x.id))))&&!nts.length)b+='<div class="dcbl"><div class="dcln"></div><div class="dcln"></div></div>';}
  b+=`<div class="dcplace">حُرِّر بـ: ${a&&sc.commune?esc(sc.commune):ds(10)} في: ${fmtD(to)}</div><div class="dcsg"><div>الحارس(ة) العام(ة)<div class="dcsgl">الاسم والتوقيع</div></div><div>اطلاع السيد(ة) مدير(ة) المؤسسة<div class="dcsgl">التأشيرة</div></div></div>`;
  dcPrintHTML(`<div class="pg fit dcpg"><div class="fitin">${b}</div></div>`);}
-function dcPrintHTML(html){const P=$('#print');P.innerHTML=html;P.style.cssText='display:block;position:absolute;left:-30000px;top:0';
+function dcPrintHTML(html){const P=$('#print');P.innerHTML=html;P.style.cssText='display:block;position:absolute;right:-30000px;left:auto;top:0';
  const W=188*MM,H=268*MM;P.querySelectorAll('.dcpg').forEach(pg=>{const inn=pg.querySelector('.fitin');let z=Math.min(1,H/inn.scrollHeight);for(let it=0;it<6;it++){inn.style.zoom=z;inn.style.width=(W/z)+'px';const hh=inn.scrollHeight*z;if(hh<=H&&(z>=1||hh>H*0.985))break;z=Math.min(1,z*H/hh*0.995);}inn.style.zoom=z;inn.style.width=(W/z)+'px';pg.style.height=H+'px';pg.style.overflow='hidden';pg.style.pageBreakAfter='auto';pg.dataset.scale=Math.round(z*100);});
  P.style.cssText='';setTimeout(()=>window.print(),150);}
 (()=>{const st=document.createElement('style');st.textContent=`.drt th{width:auto!important;white-space:normal!important;text-align:center}.drt td{padding:3px 6px!important}`;document.head.appendChild(st);})();
@@ -2538,7 +2542,7 @@ async function expRaster(node,scale,cw){const w=Math.ceil(cw||node.scrollWidth),
  const cv=document.createElement('canvas');cv.width=Math.round(w*scale);cv.height=Math.round(h*scale);const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);g.scale(scale,scale);g.drawImage(img,0,0,w,h);
  cv.toDataURL('image/jpeg',0.5);return cv;}
 async function expPages(){await expLib('h2c-lib',()=>window.html2canvas);
- const P=$('#print'),land0=expLand();const keep=P.style.cssText;P.style.cssText=`display:block;position:absolute;left:-30000px;top:0;background:#fff;width:${land0?'277mm':'190mm'}`;
+ const P=$('#print'),land0=expLand();const keep=P.style.cssText;P.style.cssText=`display:block;position:absolute;right:-30000px;left:auto;top:0;background:#fff;width:${land0?'277mm':'190mm'}`;
  let pages=[...P.querySelectorAll('.pg')].filter(p=>!p.parentElement.closest('.pg'));if(!pages.length)pages=[P];const out=[];
  try{for(let i=0;i<pages.length;i++){const pg=pages[i];if(pages.length>3)toast(`جارٍ التحضير: الصفحة ${i+1} من ${pages.length}`);
   const land=land0||(!!pg.style.height&&pg.offsetWidth>pg.offsetHeight);
@@ -2661,7 +2665,7 @@ function impRen(id){const m=S.imports.find(x=>x.id===id);const n=prompt('الا�
 function impPrint(){if(!impCur)return;const m=impCur.m;let html='';
  if(m.type==='docx'){const h=$('#imEd').innerHTML;const parts=h.split('<div class="imbrk"></div>');html=parts.map(p=>`<div class="pg fit dcpg imprint${m.land?' land':''}"><div class="fitin imdoc">${p}</div></div>`).join('');}
  else html=[...document.querySelectorAll('#imView img.impdf')].map(im=>`<div class="pg imprint${m.land?' land':''}" style="overflow:hidden"><img src="${im.src}" style="width:100%;display:block"></div>`).join('');
- if(m.type==='docx'){const P=$('#print');P.innerHTML=html;P.style.cssText='display:block;position:absolute;left:-30000px;top:0';const W=(m.land?277:188)*MM,H=(m.land?180:268)*MM;
+ if(m.type==='docx'){const P=$('#print');P.innerHTML=html;P.style.cssText='display:block;position:absolute;right:-30000px;left:auto;top:0';const W=(m.land?277:188)*MM,H=(m.land?180:268)*MM;
   P.querySelectorAll('.dcpg').forEach(pg=>{const inn=pg.querySelector('.fitin');inn.style.width=W+'px';const sh=inn.scrollHeight;if(sh>H*1.25){pg.classList.remove('fit');return;}let z=Math.min(1,H/sh);inn.style.zoom=z;inn.style.width=(W/z)+'px';pg.style.height=H+'px';pg.style.overflow='hidden';});P.style.cssText='';setTimeout(()=>window.print(),120);}
  else{$('#print').innerHTML=html;setTimeout(()=>window.print(),120);}}
 /* ---- دمج في تبويب الوثائق ---- */
@@ -3495,7 +3499,7 @@ function omrPrev(){const el=$('#omPrev');if(!el)return;const a=omrArgs();const p
  el.style.width=W+'px';el.style.transform=`scale(${sc})`;el.parentElement.style.height=(pg.offsetHeight*sc+20)+'px';}
 function omrPrint(){const a=omrArgs();const p=omrPages(a.cls,a.D,omrT);if(!p.length){toast('لا توجد صفحات للطباعة');return;}
  const P=$('#print');P.innerHTML=`<style>@page{size:210mm 297mm;margin:0}@page omL{size:297mm 210mm;margin:0}.om-pg.land{page:omL}</style>`+OMR_CSS+p.map(omrWrap).join('');
- P.style.cssText='display:block;position:absolute;left:-30000px;top:0';omrFit(P);P.style.cssText='';setTimeout(()=>window.print(),150);}
+ P.style.cssText='display:block;position:absolute;right:-30000px;left:auto;top:0';omrFit(P);P.style.cssText='';setTimeout(()=>window.print(),150);}
 
 /*@MASSAR{*/
 /* ================= جسر مسار (JM1): نقل غياب اليوم نحو منظومة مسار ================= */
@@ -3643,7 +3647,7 @@ function omrMapPages(root){let n=0;root.querySelectorAll('.om-pg').forEach(pg=>{
  const ks=Object.keys(S.omrMaps).sort((a,b)=>S.omrMaps[b].t-S.omrMaps[a].t);ks.slice(120).forEach(k=>delete S.omrMaps[k]);return n;}
 (()=>{const base=omrPrint;omrPrint=function(){const a=omrArgs();const p=omrPages(a.cls,a.D,omrT);if(!p.length){toast('لا توجد صفحات للطباعة');return;}
  const P=$('#print');P.innerHTML=`<style>@page{size:210mm 297mm;margin:0}@page omL{size:297mm 210mm;margin:0}.om-pg.land{page:omL}</style>`+OMR_CSS+p.map(omrWrap).join('');
- P.style.cssText='display:block;position:absolute;left:-30000px;top:0';omrFit(P);const n=omrMapPages(P);P.style.cssText='';if(n&&LIC)save();setTimeout(()=>window.print(),150);};})();
+ P.style.cssText='display:block;position:absolute;right:-30000px;left:auto;top:0';omrFit(P);const n=omrMapPages(P);P.style.cssText='';if(n&&LIC)save();setTimeout(()=>window.print(),150);};})();
 
 /* ---------- معالجة الصورة ---------- */
 function omrHomog(src,dst){const A=[],b=[];for(let i=0;i<4;i++){const[x,y]=src[i],[u,v]=dst[i];A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v);}
@@ -4397,7 +4401,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </script>
 
 <script>/* PWA: تحديث متحكَّم فيه — إشعار بالتحديث وتطبيقه بإذن المستعمل، وطلب تخزين دائم للمعطيات */
-const APP_VERSION='1.15.4';let MKB_REG=null;
+const APP_VERSION='1.15.5';let MKB_REG=null;
 async function mkbUpdNotes(){try{return await (await fetch('./version.json?t='+Date.now(),{cache:'no-store'})).json();}catch(e){return null;}}
 async function mkbUpdShow(w){if(!w)return;const v=await mkbUpdNotes()||{};
  if(v.version&&v.version===APP_VERSION){w.postMessage('skip');return;}
