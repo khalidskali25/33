@@ -335,10 +335,10 @@ function stCard(id){const s=S.students.find(x=>x.id===id);if(!s)return;let att='
 
 /* ================= 4. ABSENCE SHEETS ================= */
 const ABSDEF={titleFull:'ورقة الغياب الأسبوعية',titleHalf:'ورقة الغياب نصف الأسبوعية',instr:'توضع علامة * في خانة التلميذ(ة) الغائب(ة)',
- days:[1,1,1,1,1,1],satPM:false,showCode:true,showDates:true,showNotes:false,showTotal:false,teacherRow:true,extraRows:2,
+ days:[1,1,1,1,1,1],satPM:true,showCode:true,showDates:true,showNotes:false,showTotal:false,teacherRow:true,extraRows:2,
  orientFull:'landscape',orientHalf:'portrait',font:10,hdr:'line',sign1:'توقيع الحارس(ة) العام(ة)',sign2:''};
 const DAYS_AR=['الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-function AB(){S.settings.abs=Object.assign({},ABSDEF,S.settings.abs||{});const a=S.settings.abs;a.satPM=true;a.exSatPM=true;a.days=(a.days||[1,1,1,1,1,1]).slice();a.days[5]=1;return a;}
+function AB(){S.settings.abs=Object.assign({},ABSDEF,S.settings.abs||{});const a=S.settings.abs;if(!a._sat2){a.satPM=true;a.exSatPM=true;a.days=(a.days||[1,1,1,1,1,1]).slice();a.days[5]=1;a._sat2=1;}return a;}
 function abSet(k,v){AB()[k]=v;save();abPrev();}
 V.absheet=()=>{const t=AB();const chk=(k,l)=>`<label class="muted" style="margin-left:12px"><input type="checkbox" ${t[k]?'checked':''} onchange="abSet('${k}',this.checked)"> ${l}</label>`;
  return title('أوراق الغياب','ورقة أسبوعية كاملة أو نصف أسبوعية، لقسم واحد أو لكل الأقسام دفعة واحدة، مع إمكانية تعديل شكلها ومحتواها.')+needData()+
@@ -355,7 +355,7 @@ V.absheet=()=>{const t=AB();const chk=(k,l)=>`<label class="muted" style="margin
  <div class="fld" style="flex:2;min-width:260px"><label>التعليمة (اتركها فارغة لإخفائها)</label><input value="${esc(t.instr)}" onchange="abSet('instr',this.value)"></div>
  <div class="fld" style="flex:1;min-width:200px"><label>التوقيع الأول</label><input value="${esc(t.sign1)}" onchange="abSet('sign1',this.value)"></div>
  <div class="fld" style="flex:1;min-width:200px"><label>التوقيع الثاني (اختياري)</label><input value="${esc(t.sign2)}" onchange="abSet('sign2',this.value)"></div></div>
- <h3 style="margin-top:12px">الأيام والحصص</h3><div class="row">${DAYS_AR.map((d,i)=>`<label class="muted" style="margin-left:10px"><input type="checkbox" ${t.days[i]?'checked':''} onchange="AB().days[${i}]=this.checked?1:0;save();abPrev()"> ${d}</label>`).join('')}<span class="muted" style="margin-right:10px">السبت يوم عمل كامل (صباحا ومساء)</span></div>
+ <h3 style="margin-top:12px">الأيام والحصص</h3><div class="row">${DAYS_AR.map((d,i)=>`<label class="muted" style="margin-left:10px"><input type="checkbox" ${t.days[i]?'checked':''} onchange="AB().days[${i}]=this.checked?1:0;save();abPrev()"> ${d}</label>`).join('')}${chk('satPM','حصص السبت مساء (السبت يوم عمل كامل افتراضيا)')}</div>
  <div class="row" style="margin-top:8px"><div class="fld" style="flex:1"><label>حصص الصباح (مفصولة بفاصلة)</label><input value="${esc(S.settings.periodsAM.join(','))}" onchange="S.settings.periodsAM=this.value.split(',').map(x=>x.trim()).filter(Boolean);save();abPrev()"></div>
  <div class="fld" style="flex:1"><label>حصص المساء (اتركها فارغة لورقة صباحية فقط)</label><input value="${esc(S.settings.periodsPM.join(','))}" onchange="S.settings.periodsPM=this.value.split(',').map(x=>x.trim()).filter(Boolean);save();abPrev()"></div></div>
  <h3 style="margin-top:12px">الأعمدة والأسطر</h3><div class="row">${chk('showCode','عمود رقم مسار')}${chk('showDates','التاريخ تحت اسم اليوم')}${chk('showTotal','عمود مجموع الساعات')}${chk('showNotes','عمود الملاحظات')}${chk('teacherRow','سطر توقيع الأساتذة أسفل الجدول')}
@@ -1282,7 +1282,7 @@ function exFit(root){root.querySelectorAll('.exf').forEach(d=>{let fs=parseFloat
  <div class="fld" style="flex:1;min-width:200px"><label>سطر التوقيعات</label><input value="${esc(t.exSign)}" onchange="abSet('exSign',this.value)"></div>
  <div class="fld" style="flex:1;min-width:200px"><label>خانة الإدارة</label><input value="${esc(t.exAdm)}" onchange="abSet('exAdm',this.value)"></div>
  <div class="fld"><label>أسطر خانة الإدارة (0 = إخفاء)</label><input type="number" min="0" max="6" value="${t.exAdmRows}" onchange="abSet('exAdmRows',Math.max(0,Math.min(6,+this.value||0)))"></div>
- <label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exTT!==false?'checked':''} onchange="abSet('exTT',this.checked)"> تظليل الحصص غير المبرمجة (من جداول الحصص)</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exSubj!==false?'checked':''} onchange="abSet('exSubj',this.checked)"> كتابة المادة تحت الساعة</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exCode?'checked':''} onchange="abSet('exCode',this.checked)"> إظهار عمود الرقم الوطني (مخفي في المصنف)</label><div class="fld"><label>عدد أسطر التلاميذ (المصنف: 46)</label><input type="number" min="10" max="60" value="${t.exRows}" onchange="abSet('exRows',Math.max(10,Math.min(60,+this.value||46)))"></div><div class="fld"><label>عنوان عمود الرقم</label><input value="${esc(t.exNational)}" onchange="abSet('exNational',this.value)"></div></div>`:''}
+ <label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exTT!==false?'checked':''} onchange="abSet('exTT',this.checked)"> تظليل الحصص غير المبرمجة (من جداول الحصص)</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exSubj!==false?'checked':''} onchange="abSet('exSubj',this.checked)"> كتابة المادة تحت الساعة</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exSatPM?'checked':''} onchange="abSet('exSatPM',this.checked)"> حصص السبت مساء (كما في المصنف)</label><label class="muted" style="margin-left:12px"><input type="checkbox" ${t.exCode?'checked':''} onchange="abSet('exCode',this.checked)"> إظهار عمود الرقم الوطني (مخفي في المصنف)</label><div class="fld"><label>عدد أسطر التلاميذ (المصنف: 46)</label><input type="number" min="10" max="60" value="${t.exRows}" onchange="abSet('exRows',Math.max(10,Math.min(60,+this.value||46)))"></div><div class="fld"><label>عنوان عمود الرقم</label><input value="${esc(t.exNational)}" onchange="abSet('exNational',this.value)"></div></div>`:''}
  <h3 style="margin-top:12px">الألوان</h3>
  <div class="row" style="margin-bottom:6px"><span class="muted">ألوان جاهزة:</span>${Object.keys(ABS_PRESETS).map(n=>`<button class="btn out sm" onclick="abPreset('${n}')">${n}</button>`).join('')}</div>
  <div class="colgrid">${ex?col('hdrLbl','خانات الترويسة')+col('hdrVal','قيم الترويسة')+col('band','شريط القسم')+col('bandText','نص الشريط')+col('clsBox','خانة القسم')+col('clsText','نص خانة القسم')+col('dayHdr','خانات الأيام')+col('am','حصص الصباح')+col('pm','حصص المساء')+col('colHdr','رأس الأعمدة')+col('nameCol','عمود الأسماء')+col('sign','سطر التوقيعات')+col('adm','خانة الإدارة')+col('off','خطوط الحصص غير المبرمجة')+col('border','الحدود')+col('text','لون الكتابة')
@@ -3426,7 +3426,7 @@ function omrPages(cls,D,type){const t=AB(),AM=S.settings.periodsAM,PM=S.settings
   const reg=type==='slip'||type==='sliph';
   /* سجل أوراق الدخول: عند توفر جدول حصص للقسم تُعرض الحصص الفعلية فقط؛ وإلا تبقى كل حصص اليوم */
   const hasTT=reg&&((S.ttd&&S.ttd[cl]&&Object.keys(S.ttd[cl]).length)||(S.timetable&&S.timetable[cl]&&S.timetable[cl].length===6));
-  const perR=x=>hasTT?P.filter(p=>(tt[x.i]||[]).includes(p)):P;
+  const perR=x=>hasTT?P.filter(p=>(tt[x.i]||[]).includes(p)):(x.i===5&&!t.satPM?AM:P);
   const selR=hasTT?sel.filter(x=>perR(x).length):sel;const nColW=selR.reduce((a,x)=>a+perR(x).length,0);
   /* قاعدة: الأوراق الأسبوعية أفقية دائما، ونصف الأسبوعية عمودية */const land=type==='full'||type==='slip';const wkP=type==='slip'&&!land;
   if(!selR.length)return;const parts=(land||wkP)?[selR]:[selR.slice(0,Math.ceil(selR.length/2)),selR.slice(Math.ceil(selR.length/2))].filter(p=>p.length);
@@ -4249,9 +4249,34 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 //# sourceMappingURL=jspdf.umd.min.js.map
 </script>
 
-<script>/* PWA: تسجيل عامل الخدمة وطلب تخزين دائم للمعطيات */
-if('serviceWorker' in navigator&&window.isSecureContext&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});}
+<script>/* PWA: تحديث متحكَّم فيه — إشعار بالتحديث وتطبيقه بإذن المستعمل، وطلب تخزين دائم للمعطيات */
+const APP_VERSION='1.13.0';let MKB_REG=null;
+async function mkbUpdNotes(){try{return await (await fetch('./version.json?t='+Date.now(),{cache:'no-store'})).json();}catch(e){return null;}}
+async function mkbUpdShow(w){if(!w)return;const v=await mkbUpdNotes()||{};
+ if(v.version&&v.version===APP_VERSION){w.postMessage('skip');return;}
+ if(sessionStorage.getItem('mkbLater')===(v.version||'?'))return;
+ let b=document.getElementById('updBar');if(b)b.remove();b=document.createElement('div');b.id='updBar';
+ b.style.cssText='position:fixed;left:10px;right:10px;bottom:12px;max-width:560px;margin:auto;z-index:380;background:#fff;border:2px solid #1B4332;border-top:5px solid #B08D57;border-radius:10px;padding:12px 14px;box-shadow:0 6px 22px #0005;font-size:14px;direction:rtl';
+ const esc2=t=>String(t||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+ b.innerHTML=`<b style="color:#1B4332">تحديث جديد متاح${v.version?' — الإصدار '+esc2(v.version):''}</b>${v.date?` <span style="color:#777;font-size:12px">(${esc2(v.date)})</span>`:''}
+ <div style="font-size:12px;color:#555;margin:2px 0 6px">نسختك الحالية: ${APP_VERSION}. لن يُطبَّق التحديث إلا بإذنك، ومعطياتك لا تتأثر به.</div>
+ ${(v.notes||[]).length?`<ul style="margin:4px 0 8px;padding-right:18px;line-height:1.7">${v.notes.map(n=>'<li>'+esc2(n)+'</li>').join('')}</ul>`:''}
+ <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn gold" id="updNow">تحديث الآن</button><button class="btn out" id="updBk">نسخة احتياطية أولا</button><button class="btn out" id="updLater">لاحقا</button></div>`;
+ document.body.appendChild(b);
+ b.querySelector('#updNow').onclick=()=>{b.querySelector('#updNow').textContent='جارٍ التحديث…';w.postMessage('skip');};
+ b.querySelector('#updBk').onclick=()=>{try{backup();}catch(e){}};
+ b.querySelector('#updLater').onclick=()=>{sessionStorage.setItem('mkbLater',v.version||'?');b.remove();};}
+async function mkbUpdCheck(manual){if(!MKB_REG){if(manual)toast('التحديثات متاحة فقط في التطبيق المثبّت من الرابط');return;}
+ try{await MKB_REG.update();}catch(e){}if(MKB_REG.waiting){sessionStorage.removeItem('mkbLater');mkbUpdShow(MKB_REG.waiting);}else if(manual)setTimeout(()=>{if(MKB_REG.waiting){sessionStorage.removeItem('mkbLater');mkbUpdShow(MKB_REG.waiting);}else toast('أنت على آخر إصدار: '+APP_VERSION);},2500);}
+if('serviceWorker' in navigator&&window.isSecureContext&&/^https?:$/.test(location.protocol)){window.addEventListener('load',async()=>{try{
+ const reg=await navigator.serviceWorker.register('./sw.js');MKB_REG=reg;
+ if(reg.waiting&&navigator.serviceWorker.controller)mkbUpdShow(reg.waiting);
+ reg.addEventListener('updatefound',()=>{const n=reg.installing;if(n)n.addEventListener('statechange',()=>{if(n.state==='installed'&&navigator.serviceWorker.controller)mkbUpdShow(n);});});
+ let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rl)return;rl=true;location.reload();});
+ setInterval(()=>reg.update().catch(()=>{}),3*3600e3);}catch(e){}});}
 if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(()=>{});}
+/* بطاقة الإصدار في الإعدادات */
+(()=>{try{if(typeof V!=="undefined"&&V.settings){const b=V.settings;V.settings=(...a)=>b(...a)+`<div class="card"><h3>إصدار التطبيق</h3><p>الإصدار الحالي: <b>${APP_VERSION}</b></p><p class="muted">التحديثات لا تُطبَّق تلقائيا: عند توفر إصدار جديد يظهر إشعار بما فيه، وتختار أنت وقت تطبيقه.</p><button class="btn" onclick="mkbUpdCheck(true)">التحقق من التحديثات</button></div>`;}}catch(e){}})();
 </script>
 </body>
 </html>
