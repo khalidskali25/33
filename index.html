@@ -3367,7 +3367,9 @@ const OMR_CSS=`<style>
 .om-pg *{box-sizing:border-box}
 .om-anc{position:absolute;width:6mm;height:6mm;background:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .om-a1{top:5mm;right:5mm}.om-a2{top:5mm;left:5mm}.om-a3{bottom:5mm;right:5mm}.om-a4{bottom:5mm;left:5mm}
-.om-hdr{display:flex;justify-content:space-between;font-size:7.8pt;line-height:1.3}
+.om-hdr{display:flex;justify-content:space-between;font-size:7pt;line-height:1.25;min-height:16mm;margin-top:-4mm}
+.om-pg.land .om-hdr{min-height:20mm}
+.om-hdr>div{max-width:calc(50% - 14mm);padding:0 1.5mm}
 .om-ttl{text-align:center;font-weight:bold;font-size:12pt;margin:1.2mm 0}
 .om-info{display:flex;justify-content:space-between;align-items:center;gap:1mm;font-size:9pt;border:1px solid #000;padding:1mm 2mm;margin-bottom:1.2mm}
 .om-info span{white-space:nowrap}
@@ -3390,16 +3392,16 @@ table.om-t .dd{border-left:0.6mm solid #000}
 table.om-t .pm{background:#E6E6E6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table.om-t .off{background:repeating-linear-gradient(45deg,#fff 0 1.2mm,#bdbdbd 1.2mm 1.5mm);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table.om-t tr.tr td{font-weight:bold}
-.om-sign{display:flex;justify-content:space-between;font-size:9pt;margin-top:2mm;font-weight:bold;padding-left:30mm}
-.om-qr{position:absolute;left:13mm;bottom:9mm;width:26mm;height:26mm}
-.om-foot{display:flex;justify-content:space-between;font-size:8.5pt;margin-top:2mm;padding-left:30mm}
+.om-sign{display:flex;justify-content:space-between;font-size:9pt;margin-top:2mm;font-weight:bold}
+.om-qr{position:absolute;top:4mm;width:18mm;height:18mm}
+.om-foot{display:flex;justify-content:space-between;font-size:8.5pt;margin-top:2mm}
 .om-mark{position:absolute;bottom:1.8mm;left:0;right:0;text-align:center;font-size:6.3pt;color:#444}
 </style>`;
 function omrWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7);}
 /* شريط التعريف 16 خانة: 8 للقسم (ترتيبه في لائحة الأقسام) + 6 لرقم الأسبوع + 2 لنوع الورقة/الجزء */
 function omrBits(cls,D,part){const ci=Math.max(0,S.classes.findIndex(c=>c.code===cls))+1,w=omrWeek(D);const v=((ci&255)<<8)|((w&63)<<2)|(part&3);
  let b='';for(let i=15;i>=0;i--)b+=`<i class="${(v>>i)&1?'on':''}"${i===7?' style="margin-left:1.2mm"':''}></i>`;return `<span class="om-bits">${b}</span>`;}
-function omrHead(){const s=S.school;return `<div class="om-hdr"><div>المملكة المغربية — ${esc(s.ministry)}<br>الأكاديمية الجهوية للتربية والتكوين: ${esc(s.academie||'.........................')} — المديرية الإقليمية: ${esc(s.direction||'.........................')}</div>
+function omrHead(){const s=S.school;return `<div class="om-hdr"><div>المملكة المغربية<br>${esc(s.ministry)}<br>الأكاديمية الجهوية للتربية والتكوين: ${esc(s.academie||'.........................')}<br>المديرية الإقليمية: ${esc(s.direction||'.........................')}</div>
  <div style="text-align:left">المؤسسة: ${esc(s.etab||'.........................')}<br>السنة الدراسية: ${esc(s.annee||'.........................')}</div></div>`;}
 const omrAnc=()=>'<span class="om-anc om-a1"></span><span class="om-anc om-a2"></span><span class="om-anc om-a3"></span><span class="om-anc om-a4"></span>';
 const omrDt=(D,i)=>{const x=new Date(D);x.setDate(x.getDate()+i);return x;};
@@ -3443,7 +3445,7 @@ function omrPages(cls,D,type){const t=AB(),AM=S.settings.periodsAM,PM=S.settings
 function omrWrap(p){return `<div class="pg om-pg${p.land?' land':''}" data-omr="${esc(p.data)}" style="width:${p.land?297:210}mm;height:${p.land?209.5:296.5}mm;overflow:hidden">${omrAnc()}<div class="om-in">${p.html}</div></div>`;}
 /* ضبط آلي: إذا تجاوز المحتوى حدود الصفحة (اختلاف الخطوط بين الأجهزة) يُصغَّر داخل الإطار، وتبقى علامات الزوايا في مكانها */
 function omrFit(root){root.querySelectorAll('.om-pg').forEach(pg=>{const inn=pg.querySelector('.om-in');if(!inn)return;const land=pg.classList.contains('land');
- const W=((land?297:210)-22)*MM,H=((land?209.5:296.5)-33)*MM;inn.style.zoom=1;inn.style.width=W+'px';
+ const W=((land?297:210)-22)*MM,H=((land?209.5:296.5)-20)*MM;inn.style.zoom=1;inn.style.width=W+'px';
  /* تصغير خط التوقيت العمودي حتى يدخل في ارتفاع خانة العنوان الثابت */
  inn.querySelectorAll('.om-v').forEach(v=>{const lim=parseFloat(v.dataset.h)*MM;let f=parseFloat(v.style.fontSize)||6;for(let i=0;i<12&&v.offsetHeight>lim&&f>3;i++){f-=0.25;v.style.fontSize=f+'pt';}});
  /* تمديد: توزيع المساحة الفارغة أسفل الصفحة على صفوف التلاميذ، فتكبر الخانات والمربعات (طولا) بشكل تناسبي */
@@ -3692,11 +3694,11 @@ function omrQRsvg(s){const q=qrcode(0,'L');q.addData(s,'Byte');q.make();const n=
  return `<svg viewBox="-2 -2 ${n+4} ${n+4}" width="100%" height="100%" shape-rendering="crispEdges" style="display:block"><rect x="-2" y="-2" width="${n+4}" height="${n+4}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;}
 qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];
 (()=>{const base=omrFit;omrFit=function(root){base(root);root.querySelectorAll('.om-pg').forEach(pg=>{const m=omrMeasure(pg);if(!m)return;let q=pg.querySelector('.om-qr');
- if(!q){q=document.createElement('div');q.className='om-qr';pg.appendChild(q);}try{q.innerHTML=omrQRsvg(omrEnc(m));}catch(e){q.innerHTML='';}});};})();
+ if(!q){q=document.createElement('div');q.className='om-qr';pg.appendChild(q);}const qs=m.land?22:18;q.style.left=(m.W/2-qs/2)+'mm';q.style.width=q.style.height=qs+'mm';try{q.innerHTML=omrQRsvg(omrEnc(m));}catch(e){q.innerHTML='';}});};})();
 /* قراءة رمز QR من الصورة الأصلية بدقة عالية بعد تصحيح المنظور */
 function omrGray(src,maxDim){const sc=Math.min(1,maxDim/Math.max(src.width,src.height)),w=Math.round(src.width*sc),h=Math.round(src.height*sc);const cv=document.createElement('canvas');cv.width=w;cv.height=h;
  const g=cv.getContext('2d',{willReadFrequently:true});g.drawImage(src,0,0,w,h);const d=g.getImageData(0,0,w,h).data,gray=new Uint8Array(w*h);for(let i=0,j=0;j<gray.length;i+=4,j++)gray[j]=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000;return{w,h,gray};}
-function omrQRread(o,Hq,H){const x0=11.5,y0=H-38,S0=32,N=480,out=new Uint8ClampedArray(N*N*4);
+function omrQRread(o,Hq,W){const S0=W>250?28:24,x0=W/2-S0/2,y0=1,N=440,out=new Uint8ClampedArray(N*N*4);
  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const[u,v]=omrProj(Hq,x0+S0*(i+0.5)/N,y0+S0*(j+0.5)/N);let g=255;const x=Math.floor(u),y=Math.floor(v);
   if(x>=0&&y>=0&&x<o.w-1&&y<o.h-1){const fx=u-x,fy=v-y,p=y*o.w+x;g=(o.gray[p]*(1-fx)+o.gray[p+1]*fx)*(1-fy)+(o.gray[p+o.w]*(1-fx)+o.gray[p+o.w+1]*fx)*fy;}
   const k=(j*N+i)*4;out[k]=out[k+1]=out[k+2]=g;out[k+3]=255;}
@@ -3706,11 +3708,11 @@ function omrCells(im,m,H){const box=(x,y,w,h)=>{const e=Math.min(w,h)*0.13;let m
  return R.map(r=>r.map((v,j)=>{const d=v-med[j];return d>=0.12?2:d>=0.05?1:0;}));}
 (()=>{const base=omrRead;omrRead=function(im,orig){const A=omrAnchors(im);
  if(A&&orig){const f=orig.w/im.w;for(const land of[false,true]){const W=land?297:210,H=land?209.5:296.5,anc=[[8,8],[W-8,8],[W-8,H-8],[8,H-8]];
-  for(let r=0;r<4;r++){const dI=[0,1,2,3].map(i=>A[(i+r)%4]),Hq=omrHomog(anc,dI.map(p=>[p[0]*f,p[1]*f]));if(!Hq)continue;const s=omrQRread(orig,Hq,H);if(!s)continue;
+  for(let r=0;r<4;r++){const dI=[0,1,2,3].map(i=>A[(i+r)%4]),Hq=omrHomog(anc,dI.map(p=>[p[0]*f,p[1]*f]));if(!Hq)continue;const s=omrQRread(orig,Hq,W);if(!s)continue;
    const m=omrDec(s);if(!m||m.land!==land)continue;
    if(!S.classes.some(c=>c.code===m.cls)||!m.rows.some(x=>x.sid))return{err:`تعرفت على الورقة (القسم ${m.cls})، لكن لوائح هذا القسم غير موجودة في هذا الجهاز. حمّل لوائح مسار للمؤسسة أولا.`};
    const Hi=omrHomog(anc,dI);return{m,cells:omrCells(im,m,Hi)};}}}
- return base(im);};})();
+ const r0=base(im);if(r0.err&&A&&/لا توجد خريطة|لم أتعرف/.test(r0.err))return{err:'وجدت المربعات السوداء لكن لم أستطع قراءة رمز QR أعلى الورقة. اقترب أكثر حتى تملأ الورقة الصورة، وتجنب الظل واللمعان، ثم أعد التصوير.'};return r0;};})();
 (()=>{omrNext=async function(){const f=omrQ.shift();if(!f)return;toast('جارٍ قراءة الورقة…');let img;
  try{const u=URL.createObjectURL(f);img=new Image();img.src=u;await img.decode();}catch(e){toast('تعذر فتح الصورة');return omrNext();}
  await new Promise(r=>setTimeout(r,30));let res;try{res=omrRead(omrImg(img,2200),omrGray(img,4200));}catch(e){res={err:'خطأ أثناء القراءة: '+e.message};}
