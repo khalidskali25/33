@@ -1441,7 +1441,7 @@ MODS.splice(MODS.findIndex(m=>m[0]==='register'),0,['timetable','جداول ال
 /* ---------- تثبيت موضع الشاشة عند إعادة رسم نفس الوحدة (تسجيل الغياب، الإدخال في الجداول…) ---------- */
 (()=>{const base=go;go=function(m,...a){try{ensureExt();}catch(e){}const same=(m===cur);const sy=window.scrollY||document.documentElement.scrollTop||0,mt=($('#main')||{}).scrollTop||0;
  const tw=[...document.querySelectorAll('#main .tw')].map(e=>[e.scrollLeft,e.scrollTop]);base(m,...a);
- if(same){const R=()=>{window.scrollTo(0,sy);const M=$('#main');if(M)M.scrollTop=mt;document.querySelectorAll('#main .tw').forEach((e,i)=>{if(tw[i]){e.scrollLeft=tw[i][0];e.scrollTop=tw[i][1];}});};R();requestAnimationFrame(R);}};})();
+ if(same){const R=()=>{window.scrollTo(0,sy);const M=$('#main');if(M)M.scrollTop=mt;document.querySelectorAll('#main .tw').forEach((e,i)=>{if(tw[i]){e.scrollLeft=tw[i][0];e.scrollTop=tw[i][1];}});};R();requestAnimationFrame(R);setTimeout(R,70);setTimeout(R,180);}};})();
 
 /* ================= أوراق الدخول: السبب إلزامي، عدد حصص الغياب اختياري، وعداد لكل تلميذ ================= */
 const isLate=t=>/تأخ/.test(String(t||''));
