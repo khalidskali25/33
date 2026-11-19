@@ -110,6 +110,11 @@ def main():
             shutil.copy2(os.path.join(src, f), os.path.join(dst, f))
     if os.path.isdir(os.path.join(src, 'icons')):
         shutil.copytree(os.path.join(src, 'icons'), os.path.join(dst, 'icons'), dirs_exist_ok=True)
+    # النسخة العامة تحتفظ بالأيقونات الخضراء (أيقونات `icons/` في المستودع الخاص برتقالية)
+    green = os.path.join(src, 'tools', 'icons-green')
+    if not os.path.isdir(green):
+        sys.exit('خطأ: مجلد الأيقونات الخضراء tools/icons-green غير موجود')
+    shutil.copytree(green, os.path.join(dst, 'icons'), dirs_exist_ok=True)
     for f, rules in (('manifest.webmanifest', MANIFEST_REPLACEMENTS), ('README.md', README_REPLACEMENTS)):
         p = os.path.join(dst, f)
         with open(p, encoding='utf-8') as fh:
