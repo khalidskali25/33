@@ -3405,8 +3405,8 @@ function omrPages(cls,D,type){const t=AB(),AM=S.settings.periodsAM,PM=S.settings
    let h=`<table class="om-t" style="font-size:7.4pt"><colgroup><col style="width:7mm"><col style="width:52mm">${sel.map(()=>'<col><col>').join('')}</colgroup>
    <tr style="height:${rh}mm"><th rowspan="2">ر.ت</th><th rowspan="2">الاسم الكامل</th>${sel.map(x=>`<th colspan="2" class="dd">${x.d} ${fmtD(omrDt(D,x.i)).slice(0,5)}</th>`).join('')}</tr>
    <tr style="height:${rh}mm">${sel.map(()=>'<th>1</th><th class="dd">2</th>').join('')}</tr>`;
-   const row=(n,name,k)=>`<tr class="om-r ${k%5===4?'sep':''}" style="height:${rh}mm"><td>${n}</td><td class="nm">${name}</td>${sel.map(()=>`<td><span class="om-bx" style="width:${bx}mm;height:${bx}mm"></span></td><td class="dd"><span class="om-bx" style="width:${bx}mm;height:${bx}mm"></span></td>`).join('')}</tr>`;
-   st.forEach((s,k)=>h+=row(s.rank,esc(fullName(s)),k));for(let k=0;k<nExtra;k++)h+=row(st.length+k+1,'',st.length+k);
+   const row=(n,name,k,sid)=>`<tr class="om-r ${k%5===4?'sep':''}" data-sid="${esc(sid||'')}" style="height:${rh}mm"><td>${n}</td><td class="nm">${name}</td>${sel.map(x=>`<td data-k="${x.i}|1"><span class="om-bx" style="width:${bx}mm;height:${bx}mm"></span></td><td class="dd" data-k="${x.i}|2"><span class="om-bx" style="width:${bx}mm;height:${bx}mm"></span></td>`).join('')}</tr>`;
+   st.forEach((s,k)=>h+=row(s.rank,esc(fullName(s)),k,s.id));for(let k=0;k<nExtra;k++)h+=row(st.length+k+1,'',st.length+k);
    h+=`<tr style="height:7mm"><td colspan="2" style="font-weight:bold">مجموع أوراق اليوم (يُكتب باليد)</td>${sel.map(()=>'<td colspan="2" class="dd"></td>').join('')}</tr></table>`;
    pages.push({land:false,html:`${omrHead()}<div class="om-ttl">ورقة تسجيل أوراق الدخول الممنوحة ورقيا</div>
     <div class="om-info"><span>القسم: <b><bdi>${esc(cl)}</bdi></b></span><span>الأسبوع: من <b>${fmtD(omrDt(D,sel[0].i))}</b> إلى <b>${fmtD(omrDt(D,sel[sel.length-1].i))}</b></span><span>عدد التلاميذ: <b>${st.length}</b></span><span style="font-size:6.5pt">شريط التعريف ${omrBits(cl,D,3)}</span></div>
@@ -3419,12 +3419,12 @@ function omrPages(cls,D,type){const t=AB(),AM=S.settings.periodsAM,PM=S.settings
    const avail=H-20-46-(t.teacherRow?9:0)-(t.sign1||t.sign2?10:0),rh=Math.max(2.9,Math.min(4.8,avail/(nRows+2)));
    const bx=Math.max(2.2,Math.min(3.6,rh-1,colW-1.4)),fs=land?6.2:7,lbl=p=>land?String(p).split('-')[0]:p;
    const offF=(x,p)=>!(tt[x.i]||[]).includes(p);const vh=10;
-   const cells=(inner)=>days.map(x=>per(x).map((p,j)=>{const last=j===per(x).length-1,o=offF(x,p);return `<td class="${j>=AM.length?'pm ':''}${last?'dd ':''}${o?'off':''}">${o?'':inner}</td>`;}).join('')).join('');
+   const cells=(inner)=>days.map(x=>per(x).map((p,j)=>{const last=j===per(x).length-1,o=offF(x,p);return `<td data-k="${x.i}|${esc(p)}" class="${j>=AM.length?'pm ':''}${last?'dd ':''}${o?'off':''}">${o?'':inner}</td>`;}).join('')).join('');
    const box=`<span class="om-bx" style="width:${bx}mm;height:${bx}mm"></span>`;
    let h=`<table class="om-t" style="font-size:${fs}pt"><colgroup><col style="width:${rkW}mm"><col style="width:${nmW}mm">${'<col>'.repeat(ncol)}</colgroup>
    <tr style="height:${rh}mm"><th rowspan="2">ر.ت</th><th rowspan="2">الاسم الكامل</th>${days.map(x=>`<th colspan="${per(x).length}" class="dd">${x.d}${t.showDates?' '+fmtD(omrDt(D,x.i)).slice(0,5):''}</th>`).join('')}</tr>
    <tr style="height:${vh}mm">${days.map(x=>per(x).map((p,j)=>`<th class="${j>=AM.length?'pm ':''}${j===per(x).length-1?'dd':''}" style="vertical-align:middle;height:${vh}mm"><span class="om-v" data-h="${vh-1.2}" style="font-size:${Math.min(6.5,(vh-1.4)/(String(p).length*0.2)).toFixed(2)}pt">${esc(p)}</span></th>`).join('')).join('')}</tr>`;
-   st.forEach((s,k)=>h+=`<tr class="om-r ${k%5===4?'sep':''}" style="height:${rh}mm"><td>${s.rank}</td><td class="nm">${esc(fullName(s))}</td>${cells(box)}</tr>`);
+   st.forEach((s,k)=>h+=`<tr class="om-r ${k%5===4?'sep':''}" data-sid="${esc(s.id)}" style="height:${rh}mm"><td>${s.rank}</td><td class="nm">${esc(fullName(s))}</td>${cells(box)}</tr>`);
    for(let k=0;k<nExtra;k++)h+=`<tr class="om-r ${(st.length+k)%5===4?'sep':''}" style="height:${rh}mm"><td>${st.length+k+1}</td><td class="nm"></td>${cells(box)}</tr>`;
    if(t.teacherRow)h+=`<tr class="tr" style="height:9mm"><td colspan="2">توقيع الأستاذ(ة)</td>${cells('')}</tr>`;
    h+='</table>';
@@ -3553,6 +3553,109 @@ if(dirFix())save();
  const btns=`<button class="btn gold tt-pulse" onclick="ttApply()">✔ تأكيد وحفظ ${ttPrev.list.length} جدولا</button><button class="btn out" onclick="ttPrev=null;go('timetable')">إلغاء الاستيراد</button>`;
  return `<style>@keyframes ttPulse{0%,100%{box-shadow:0 0 0 0 rgba(176,141,87,.7)}50%{box-shadow:0 0 0 7px rgba(176,141,87,0)}}.tt-pulse{animation:ttPulse 1.6s ease-in-out infinite}</style>`+h.replace(anchor,anchor+btns);};})();
 
+/* ================= قراءة أوراق الغياب الرقمية بالتصوير، ومزامنتها مع سجل الغياب وأوراق الدخول ================= */
+S.omrMaps=S.omrMaps||{};
+/* خريطة الورقة: مواضع العلامات والشريط والمربعات بالمليمتر، تُحفظ عند الطباعة لتُقرأ بها الصورة لاحقا */
+function omrMapPages(root){let n=0;root.querySelectorAll('.om-pg').forEach(pg=>{if(!pg.dataset.omr)return;const land=pg.classList.contains('land'),W=land?297:210,H=land?209.5:296.5;
+ const R=pg.getBoundingClientRect();if(!R.width)return;const k=W/R.width,q=v=>Math.round(v*100)/100;
+ const rel=e=>{const r=e.getBoundingClientRect();return[q((r.left-R.left)*k),q((r.top-R.top)*k),q(r.width*k),q(r.height*k)];};
+ const A=[...pg.querySelectorAll('.om-anc')].map(e=>{const r=rel(e);return[q(r[0]+r[2]/2),q(r[1]+r[3]/2)];});
+ const anc=[A.find(a=>a[0]<W/2&&a[1]<H/2),A.find(a=>a[0]>W/2&&a[1]<H/2),A.find(a=>a[0]>W/2&&a[1]>H/2),A.find(a=>a[0]<W/2&&a[1]>H/2)];if(anc.some(a=>!a))return;
+ const bi=[...pg.querySelectorAll('.om-bits i')];const code=bi.map(i=>i.classList.contains('on')?1:0).join('');
+ const trs=[...pg.querySelectorAll('tr.om-r')];if(!trs.length)return;
+ const rows=trs.map(tr=>{const b=tr.querySelector('.om-bx');const r=b?rel(b):rel(tr);return{sid:tr.dataset.sid||'',y:r[1],h:r[3]};});
+ const cols=[...trs[0].querySelectorAll('td[data-k]')].filter(td=>td.querySelector('.om-bx')).map(td=>{const r=rel(td.querySelector('.om-bx'));return{k:td.dataset.k,x:r[0],w:r[2]};});
+ const [type,cls,iso]=pg.dataset.omr.split('|');
+ S.omrMaps[pg.dataset.omr]={id:pg.dataset.omr,type,cls,iso,land,W,H,anc,bits:bi.map(rel),code,rows,cols,t:Date.now()};n++;});
+ const ks=Object.keys(S.omrMaps).sort((a,b)=>S.omrMaps[b].t-S.omrMaps[a].t);ks.slice(120).forEach(k=>delete S.omrMaps[k]);return n;}
+(()=>{const base=omrPrint;omrPrint=function(){const a=omrArgs();const p=omrPages(a.cls,a.D,omrT);if(!p.length){toast('لا توجد صفحات للطباعة');return;}
+ const land=p[0].land;const P=$('#print');P.innerHTML=`<style>@page{size:A4 ${land?'landscape':'portrait'};margin:0}</style>`+OMR_CSS+p.map(omrWrap).join('');
+ P.style.cssText='display:block;position:absolute;left:-30000px;top:0';omrFit(P);const n=omrMapPages(P);P.style.cssText='';if(n&&LIC)save();setTimeout(()=>window.print(),150);};})();
+
+/* ---------- معالجة الصورة ---------- */
+function omrHomog(src,dst){const A=[],b=[];for(let i=0;i<4;i++){const[x,y]=src[i],[u,v]=dst[i];A.push([x,y,1,0,0,0,-u*x,-u*y]);b.push(u);A.push([0,0,0,x,y,1,-v*x,-v*y]);b.push(v);}
+ for(let c=0;c<8;c++){let m=c;for(let r=c+1;r<8;r++)if(Math.abs(A[r][c])>Math.abs(A[m][c]))m=r;[A[c],A[m]]=[A[m],A[c]];[b[c],b[m]]=[b[m],b[c]];const pv=A[c][c];if(Math.abs(pv)<1e-12)return null;
+  for(let r=0;r<8;r++){if(r===c)continue;const f=A[r][c]/pv;if(!f)continue;for(let k=c;k<8;k++)A[r][k]-=f*A[c][k];b[r]-=f*b[c];}}
+ return b.map((v,i)=>v/A[i][i]);}
+const omrProj=(h,x,y)=>{const w=h[6]*x+h[7]*y+1;return[(h[0]*x+h[1]*y+h[2])/w,(h[3]*x+h[4]*y+h[5])/w];};
+function omrImg(src,maxDim){const sc=Math.min(1,maxDim/Math.max(src.width,src.height)),w=Math.max(1,Math.round(src.width*sc)),h=Math.max(1,Math.round(src.height*sc));
+ const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d',{willReadFrequently:true});g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(src,0,0,w,h);
+ const d=g.getImageData(0,0,w,h).data,gray=new Uint8Array(w*h);for(let i=0,j=0;j<gray.length;i+=4,j++)gray[j]=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000;
+ const I=new Uint32Array((w+1)*(h+1));for(let y=0;y<h;y++){let s=0;for(let x=0;x<w;x++){s+=gray[y*w+x];I[(y+1)*(w+1)+x+1]=I[y*(w+1)+x+1]+s;}}
+ const r=Math.max(4,Math.round(Math.min(w,h)/14));
+ const mean=(x,y)=>{const x0=Math.max(0,x-r),y0=Math.max(0,y-r),x1=Math.min(w,x+r+1),y1=Math.min(h,y+r+1);return(I[y1*(w+1)+x1]-I[y0*(w+1)+x1]-I[y1*(w+1)+x0]+I[y0*(w+1)+x0])/((x1-x0)*(y1-y0));};
+ const dark=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return 0;const g0=gray[y*w+x];return g0<mean(x,y)*0.78||g0<70?1:0;};
+ return{w,h,gray,dark,sc};}
+function omrAnchors(im){const{w,h,gray}=im;const B=new Uint8Array(w*h);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++)B[y*w+x]=im.dark(x,y)&&gray[y*w+x]<140?1:0;
+ const L=new Int32Array(w*h),C=[],st=[];let id=0;
+ for(let p0=0;p0<w*h;p0++){if(!B[p0]||L[p0])continue;id++;let a=0,x0=w,y0=h,x1=0,y1=0,sx=0,sy=0;st.push(p0);L[p0]=id;
+  while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;a++;sx+=x;sy+=y;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+   if(x>0&&B[p-1]&&!L[p-1]){L[p-1]=id;st.push(p-1);}if(x<w-1&&B[p+1]&&!L[p+1]){L[p+1]=id;st.push(p+1);}if(y>0&&B[p-w]&&!L[p-w]){L[p-w]=id;st.push(p-w);}if(y<h-1&&B[p+w]&&!L[p+w]){L[p+w]=id;st.push(p+w);}}
+  const bw=x1-x0+1,bh=y1-y0+1,s=Math.max(bw,bh),m=Math.min(w,h);
+  if(s>=m*0.012&&s<=m*0.1&&bw/bh>0.6&&bw/bh<1.65&&a/(bw*bh)>0.68)C.push({x:sx/a,y:sy/a,s});}
+ if(C.length<4)return null;const cor=[[0,0],[w,0],[w,h],[0,h]],used=new Set(),out=[];
+ for(const[cx,cy]of cor){let best=null,bd=1e18;C.forEach((c,i)=>{if(used.has(i))return;const d=(c.x-cx)**2+(c.y-cy)**2;if(d<bd){bd=d;best=i;}});used.add(best);out.push(C[best]);}
+ const area=Math.abs(out.reduce((a,p,i)=>{const q=out[(i+1)%4];return a+p.x*q.y-q.x*p.y;},0))/2;if(area<w*h*0.12)return null;return out.map(c=>[c.x,c.y]);}
+function omrRatio(im,H,x,y,w,h,f){const ix=x+w*(1-f)/2,iy=y+h*(1-f)/2,iw=w*f,ih=h*f,a=omrProj(H,ix,iy),b=omrProj(H,ix+iw,iy+ih);
+ const n=Math.max(6,Math.min(14,Math.round(Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]))*1.2)));let d=0;
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){const p=omrProj(H,ix+iw*(i+0.5)/n,iy+ih*(j+0.5)/n);d+=im.dark(p[0],p[1]);}return d/(n*n);}
+function omrRead(im){const A=omrAnchors(im);if(!A)return{err:'لم أجد المربعات السوداء الأربعة في زوايا الورقة. صوّر الورقة كاملة ومسطحة، بإضاءة جيدة ودون ظل.'};
+ const maps=Object.values(S.omrMaps).sort((a,b)=>b.t-a.t);if(!maps.length)return{err:'لا توجد خريطة لأي ورقة مطبوعة على هذا الجهاز. اطبع الأوراق من هذا التبويب أولا، ثم صوّرها.'};
+ let best=null;for(const m of maps)for(let r=0;r<4;r++){const dst=[0,1,2,3].map(i=>A[(i+r)%4]);const H=omrHomog(m.anc,dst);if(!H)continue;
+  let bad=0;for(let i=0;i<m.bits.length&&bad<2;i++){const[x,y,w,h]=m.bits[i];if((omrRatio(im,H,x,y,w,h,0.6)>0.5?'1':'0')!==m.code[i])bad++;}
+  if(bad<2&&(!best||bad<best.bad))best={m,H,bad};if(best&&best.bad===0)break;}
+ if(!best)return{err:'لم أتعرف على الورقة: شريط التعريف لا يطابق أي ورقة طُبعت على هذا الجهاز.'};
+ const{m,H}=best;
+ /* لكل مربع: أدنى نسبة سواد عبر إزاحات صغيرة، فيُستبعد أثر إطار المربع عند الانحراف البسيط، وتبقى العلامة الحقيقية في الوسط */
+ const box=(x,y,w,h)=>{const e=Math.min(w,h)*0.13;let mn=1;for(const dx of[-e,0,e])for(const dy of[-e,0,e]){const v=omrRatio(im,H,x+dx,y+dy,w,h,0.52);if(v<mn)mn=v;if(mn<0.02)return mn;}return mn;};
+ const R=m.rows.map(rw=>m.cols.map(c=>box(c.x,rw.y,c.w,rw.h)));
+ const med=m.cols.map((c,j)=>{const v=R.map(r=>r[j]).sort((a,b)=>a-b);return v[Math.floor(v.length/2)]||0;});
+ const cells=R.map((r,i)=>r.map((v,j)=>{const d=v-med[j];return d>=0.12?2:d>=0.05?1:0;}));return{m,cells};}
+
+/* ---------- واجهة القراءة والمراجعة ---------- */
+const omrDayIso=(iso,i)=>{const d=new Date(iso+'T00:00');d.setDate(d.getDate()+(+i));return isoOf(d);};
+function omrPick(cap){if(!LIC){licDlg();return;}const i=document.createElement('input');i.type='file';i.accept='image/*';if(cap)i.setAttribute('capture','environment');else i.multiple=true;
+ i.onchange=()=>{const f=[...i.files];if(f.length)omrQueue(f);};i.click();}
+let omrQ=[];
+async function omrQueue(files){omrQ=files.slice();omrNext();}
+async function omrNext(){const f=omrQ.shift();if(!f)return;toast('جارٍ قراءة الورقة…');let img;
+ try{const u=URL.createObjectURL(f);img=new Image();img.src=u;await img.decode();}catch(e){toast('تعذر فتح الصورة');return omrNext();}
+ await new Promise(r=>setTimeout(r,30));let res;try{res=omrRead(omrImg(img,2200));}catch(e){res={err:'خطأ أثناء القراءة: '+e.message};}
+ omrReview(res,img.src,f.name);}
+function omrColLbl(m,k){const[d,p]=k.split('|');return esc(DAYS_AR[+d])+'<br>'+(m.type==='slip'?'ورقة '+esc(p):esc(p));}
+function omrReview(res,src,name){let o=$('#omrRv');if(o)o.remove();o=document.createElement('div');o.id='omrRv';
+ o.style.cssText='position:fixed;inset:0;background:#0008;z-index:350;overflow:auto;padding:10px';
+ if(res.err){o.innerHTML=`<div class="card" style="max-width:560px;margin:20px auto;border-top:5px solid #9B2226"><h3 style="margin-top:0">تعذرت قراءة الورقة</h3><p>${esc(res.err)}</p><p class="muted">${esc(name||'')}</p><img src="${src}" style="max-width:100%;max-height:300px;border:1px solid #ccc"><div class="row"><button class="btn" onclick="$('#omrRv').remove();omrPick(true)">إعادة التصوير</button><button class="btn out" onclick="$('#omrRv').remove();omrNext()">${omrQ.length?'الورقة الموالية':'إغلاق'}</button></div></div>`;document.body.appendChild(o);return;}
+ const{m,cells}=res;window._omrRes=res;const slip=m.type==='slip';const st=Object.fromEntries(S.students.map(s=>[s.id,s]));
+ const nM=cells.flat().filter(v=>v===2).length,nU=cells.flat().filter(v=>v===1).length;
+ const tName={full:'ورقة الغياب الأسبوعية',half1:'ورقة الغياب نصف الأسبوعية (1)',half2:'ورقة الغياب نصف الأسبوعية (2)',slip:'ورقة أوراق الدخول'}[m.type]||m.type;
+ o.innerHTML=`<div class="card" style="max-width:1100px;margin:0 auto;border-top:5px solid #B08D57"><h3 style="margin-top:0">مراجعة القراءة قبل التسجيل</h3>
+ <div class="row"><span class="tag">${esc(tName)}</span><span class="tag">القسم: <b>${esc(m.cls)}</b></span><span class="tag">أسبوع ${fmtD(m.iso)}</span><span class="tag" style="background:#FADBD8">مؤشَّر: ${nM}</span>${nU?`<span class="tag" style="background:#FFE8CC">مشكوك فيه: ${nU}</span>`:''}</div>
+ <p class="muted">راجع الخانات مقارنة بالورقة: المؤشَّر مُعلَّم ✓، والمشكوك فيه بالبرتقالي غير معلَّم (علّمه إن كان مؤشرا فعلا). ${slip?'كل خانة = ورقة دخول؛ يُحدَّد سببها (غياب/تأخر) آليا من سجل الغياب.':'تُضاف الغيابات المؤشَّرة إلى سجل الغياب اليومي دون حذف ما سُجّل سابقا.'}</p>
+ <details><summary style="cursor:pointer;color:var(--g)">عرض الصورة</summary><img src="${src}" style="max-width:100%;max-height:420px;border:1px solid #ccc;margin-top:6px"></details>
+ <div class="tw" style="max-height:60vh;overflow:auto;margin-top:8px"><table class="d" style="font-size:12px"><tr><th>ر.ت</th><th>الاسم</th>${m.cols.map(c=>`<th style="font-size:10px;white-space:nowrap;line-height:1.3">${omrColLbl(m,c.k)}</th>`).join('')}</tr>
+ ${m.rows.map((rw,i)=>{const s=st[rw.sid];return `<tr><td class="n">${s?s.rank:'—'}</td><td style="white-space:nowrap">${s?esc(fullName(s)):'<span class="muted">سطر إضافي (يُتجاهل)</span>'}</td>${m.cols.map((c,j)=>{const v=cells[i][j];return `<td class="n" style="${v===1?'background:#FFE8CC':v===2?'background:#FADBD8':''}"><input type="checkbox" style="width:auto" data-r="${i}" data-c="${j}" ${v===2?'checked':''} ${s?'':'disabled'}></td>`;}).join('')}</tr>`;}).join('')}</table></div>
+ <div class="row" style="margin-top:8px"><button class="btn gold" onclick="omrApply()">✔ تأكيد وتسجيل</button><button class="btn out" onclick="$('#omrRv').remove();omrNext()">إلغاء</button>${omrQ.length?`<span class="muted">تبقى ${omrQ.length} صورة</span>`:''}</div></div>`;
+ document.body.appendChild(o);}
+function omrApply(){const res=window._omrRes;if(!res)return;const{m}=res;const today=isoOf(new Date());let nA=0,nS=0,days=new Set();
+ const sel=[...document.querySelectorAll('#omrRv input[data-r]:checked')].map(e=>({rw:m.rows[+e.dataset.r],c:m.cols[+e.dataset.c]})).filter(x=>x.rw.sid);
+ if(m.type==='slip'){const cnt={};sel.forEach(({rw,c})=>{const[d,n]=c.k.split('|');const key=rw.sid+'|'+d;cnt[key]=Math.max(cnt[key]||0,+n);});
+  Object.entries(cnt).forEach(([key,n])=>{const[sid,d]=key.split('|'),iso=omrDayIso(m.iso,d),s=S.students.find(x=>x.id===sid);if(!s)return;
+   const have=S.admissions.filter(a=>a.date===iso&&(a.ids||[]).includes(sid)).length;const L=S.absLog[iso]&&S.absLog[iso][s.classe];
+   for(let k=have;k<n;k++){S.admissions.push({no:++S.seq.adm,date:iso,time:'',classe:s.classe,type:L&&L.st[sid]&&L.st[sid].a.length?'غياب':'تأخر',note:'ورقة ورقية (مقروءة بالتصوير)',ids:[sid],paper:true});nS++;}});}
+ else{m.cols.forEach(c=>{const iso=omrDayIso(m.iso,c.k.split('|')[0]);if(iso<=today)days.add(iso);});
+  days.forEach(iso=>{const L=LOG(iso,m.cls,true);L.at=L.at||Date.now();});
+  sel.forEach(({rw,c})=>{const[d,p]=c.k.split('|');const iso=omrDayIso(m.iso,d);const L=LOG(iso,m.cls,true),x=stRec(L,rw.sid);if(!x.a.includes(p)){x.a.push(p);nA++;}L.at=Date.now();L.omr=true;});}
+ S.omrDone=S.omrDone||{};S.omrDone[m.id]=Date.now();save();$('#omrRv').remove();
+ toast(m.type==='slip'?`سُجلت ${nS} ورقة دخول`:`سُجل ${nA} غياب جديد (${days.size} أيام)`);try{go(cur);}catch(e){}setTimeout(omrNext,400);}
+/* زر القراءة: في تبويب «أوراق الغياب الرقمية»، ونسخة منه في «تسجيل الغياب اليومي» */
+const OMR_SCAN_CARD=()=>`<div class="card" style="border-color:var(--gold)"><h3>قراءة الأوراق المؤشَّرة (بعد استعمالها)</h3><div class="row"><button class="btn gold" onclick="omrPick(true)">📷 تصوير ورقة</button><button class="btn out" onclick="omrPick(false)">🖼 اختيار صور أو مسح ضوئي</button></div>
+ <p class="muted">صوّر الورقة كاملة ومسطحة تظهر فيها المربعات السوداء الأربعة. يتعرف التطبيق على القسم والأسبوع من شريط التعريف، ثم تراجع القراءة قبل تسجيلها: الغياب يُضاف إلى «تسجيل الغياب اليومي»، وأوراق الدخول إلى سجلها، فتتحدث الإحصاءات والتقارير ونقطة المواظبة آليا. تُقرأ فقط الأوراق المطبوعة من هذا الجهاز.</p></div>`;
+(()=>{const b=V.omr;V.omr=(...a)=>{const h=b(...a);const k='<div class="card"><h3>معاينة (الصفحة الأولى)</h3>';return h.includes(k)?h.replace(k,OMR_SCAN_CARD()+k):h+OMR_SCAN_CARD();};})();
+(()=>{const b=V.register;V.register=(...a)=>{const h=b(...a);if(rgTab!=='reg')return h;const k='<button class="btn gold sm" onclick="rgPrint()">طباعة غياب اليوم</button>';
+ return h.replace(k,k+'<button class="btn sm out" onclick="omrPick(true)">📷 قراءة ورقة غياب</button>');};})();
+
 /* ================= الترخيص: رخصة موقعة رقميا مرتبطة بالجهاز (Ed25519) — دون الرخصة: وضع القراءة فقط ================= */
 const LIC_PK='fb5dMC8n8pPkRZ0raTtJKs4FR+RQu+a2eKXT2e7IQPs=';
 const b64d=s=>{s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;};
@@ -3574,8 +3677,9 @@ function licDlg(){let o=document.getElementById('licDlg');if(o)o.remove();const 
  <label style="font-weight:bold;color:var(--g)">رمز هذا الجهاز</label>
  <div class="row" style="align-items:center"><code dir="ltr" style="font-size:18px;letter-spacing:1px;background:#eef3ef;padding:6px 10px;border-radius:6px">${d}</code><button class="btn sm" onclick="licCopy('${d}')">نسخ</button></div>
  ${LIC?'':`<h4 style="margin:10px 0 4px;color:var(--g)">1. طلب الرخصة</h4>
- <div class="row"><div class="fld" style="flex:1;min-width:180px"><label>الاسم الكامل</label><input id="licNm" value="${esc((S.school&&S.school.haris)||'')}"></div>
- <div class="fld" style="flex:1;min-width:180px"><label>المؤسسة</label><input id="licEt" value="${esc((S.school&&S.school.etab)||'')}"></div></div>
+ <div class="row"><div class="fld" style="flex:1;min-width:180px"><label>الاسم الكامل <b style="color:#9B2226">*</b></label><input id="licNm" value="${esc((S.school&&S.school.haris)||'')}"></div>
+ <div class="fld" style="flex:1;min-width:180px"><label>المديرية الإقليمية <b style="color:#9B2226">*</b></label><input id="licDr" placeholder="مثال: طنجة أصيلة" value="${esc((S.school&&S.school.direction)||'')}"></div>
+ <div class="fld" style="flex:1;min-width:180px"><label>المؤسسة (اختياري)</label><input id="licEt" value="${esc((S.school&&S.school.etab)||'')}"></div></div>
  <div class="row"><button class="btn" style="background:#25D366" onclick="licWA()">طلب الرخصة عبر واتساب</button><button class="btn out" onclick="licMD()">إرسال الطلب كملف md</button></div>
  <h4 style="margin:12px 0 4px;color:var(--g)">2. التفعيل</h4><p class="muted" style="margin:0 0 4px">الصق الرخصة التي تتوصل بها، ثم اضغط «تفعيل».</p>
  <textarea id="licIn" dir="ltr" placeholder="MKB1...." style="width:100%;min-height:90px;font:13px monospace"></textarea>
@@ -3585,14 +3689,14 @@ function licDlg(){let o=document.getElementById('licDlg');if(o)o.remove();const 
  o.addEventListener('click',e=>{if(e.target===o)o.remove();});document.body.appendChild(o);}
 const LIC_WA='212620205934';
 function licReq(){const v=i=>((document.getElementById(i)||{}).value||'').trim(),sc=S.school||{};
- const nm=v('licNm'),et=v('licEt');if(!nm||!et){toast('أدخل الاسم الكامل والمؤسسة');return null;}
- if(S.school){let ch=false;if(!sc.haris){sc.haris=nm;ch=true;}if(!sc.etab){sc.etab=et;ch=true;}}
- return{nm,et,dir:sc.direction||'',dev:licDev(),dt:isoOf(new Date())};}
+ const nm=v('licNm'),et=v('licEt'),dr=dirClean(v('licDr'));
+ if(!nm||!dr){['licNm','licDr'].forEach(i=>{const e=document.getElementById(i);if(e&&!e.value.trim())e.style.borderColor='#9B2226';});toast('الاسم الكامل والمديرية الإقليمية إلزاميان لإرسال الطلب');return null;}
+ return{nm,et,dir:dr,dev:licDev(),dt:isoOf(new Date())};}
 function licWA(){const r=licReq();if(!r)return;
- const t=`*طلب رخصة تفعيل مواكبة*\n\n• الاسم: ${r.nm}\n• المؤسسة: ${r.et}${r.dir?`\n• المديرية الإقليمية: ${r.dir}`:''}\n• رمز الجهاز: ${r.dev}\n• التاريخ: ${r.dt}`;
+ const t=`*طلب رخصة تفعيل مواكبة*\n\n• الاسم: ${r.nm}\n• المديرية الإقليمية: ${r.dir}${r.et?`\n• المؤسسة: ${r.et}`:''}\n• رمز الجهاز: ${r.dev}\n• التاريخ: ${r.dt}`;
  window.open('https://wa.me/'+LIC_WA+'?text='+encodeURIComponent(t),'_blank');}
 async function licMD(){const r=licReq();if(!r)return;
- const md=`# طلب رخصة تفعيل — مواكبة\n\n| البيان | القيمة |\n|---|---|\n| الاسم الكامل | ${r.nm} |\n| المؤسسة | ${r.et} |\n| المديرية الإقليمية | ${r.dir||'—'} |\n| رمز الجهاز | \`${r.dev}\` |\n| تاريخ الطلب | ${r.dt} |\n`;
+ const md=`# طلب رخصة تفعيل — مواكبة\n\n| البيان | القيمة |\n|---|---|\n| الاسم الكامل | ${r.nm} |\n| المديرية الإقليمية | ${r.dir} |\n| المؤسسة | ${r.et||'—'} |\n| رمز الجهاز | \`${r.dev}\` |\n| تاريخ الطلب | ${r.dt} |\n`;
  const name='طلب-رخصة-مواكبة-'+r.dev+'.md',f=new File([md],name,{type:'text/markdown'});
  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'طلب رخصة مواكبة',text:'طلب رخصة تفعيل مواكبة — رمز الجهاز: '+r.dev});return;}}catch(e){if(e&&e.name==='AbortError')return;}
  const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=name;document.body.appendChild(a);a.click();a.remove();
