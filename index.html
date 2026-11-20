@@ -4473,7 +4473,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </script>
 
 <script>/* PWA: تحديث متحكَّم فيه — إشعار بالتحديث وتطبيقه بإذن المستعمل، وطلب تخزين دائم للمعطيات */
-const APP_VERSION='1.17.3';let MKB_REG=null;
+const APP_VERSION='1.18.0';let MKB_REG=null;
 async function mkbUpdNotes(){try{return await (await fetch('./version.json?t='+Date.now(),{cache:'no-store'})).json();}catch(e){return null;}}
 async function mkbUpdShow(w){if(!w)return;const v=await mkbUpdNotes()||{};
  if(v.version&&v.version===APP_VERSION){w.postMessage('skip');return;}
@@ -4865,6 +4865,110 @@ TW_TABS.unshift(['mf','⭐ النماذج المعتمدة']);TW_TN.mf='النم
 .mfrad{display:inline-flex;align-items:center;gap:4px;font-weight:bold}`;document.head.appendChild(st);})();
 /* المعاينة على مقاس A4 قبل التصغير لعرض الشاشة */
 (()=>{const a=AFTER.tawthiq;AFTER.tawthiq=()=>{if(twTab==='mf'){const pv=$('#twPv');if(pv&&pv.querySelector('.pg.fit'))fitPages(pv,'portrait');}a();};})();
+
+/* ===== المواكبة الذكية للبحث ===== */
+let smQ='',smBusy=false,smAns=null,smMemTab='star';
+const SM_LS='mw_ai_cfg';
+function smCfg(){try{return JSON.parse(localStorage.getItem(SM_LS)||'{}')||{};}catch(e){return {};}}
+function smCfgSet(o){try{localStorage.setItem(SM_LS,JSON.stringify(Object.assign(smCfg(),o)));}catch(e){}}
+function smMem(){S.smem=S.smem||{items:[]};S.smem.items=S.smem.items||[];return S.smem;}
+const smE=encodeURIComponent,smG=q=>'https://www.google.com/search?q='+smE(q);
+const SM_SRC=[
+ ['men','🏛 موقع الوزارة',q=>smG('site:men.gov.ma '+q)],
+ ['sgg','📰 الجريدة الرسمية',q=>smG('site:sgg.gov.ma '+q)],
+ ['pdf','📄 وثائق PDF',q=>smG(q+' filetype:pdf')],
+ ['g','🌐 Google',q=>smG(q)],
+ ['sch','🎓 Google Scholar',q=>'https://scholar.google.com/scholar?q='+smE(q)],
+ ['drv','🗂 Drive (حسابي)',q=>'https://drive.google.com/drive/search?q='+smE(q)]];
+const SM_AI=[
+ ['claude','Claude (حسابي)',p=>'https://claude.ai/new?q='+smE(p)],
+ ['gpt','ChatGPT (حسابي)',p=>'https://chatgpt.com/?q='+smE(p)],
+ ['gem','Gemini (حسابي)',p=>'https://gemini.google.com/app']];
+const SM_SYS='أنت مساعد لإطار متصرف تربوي (حراسة عامة) بمنظومة التربية والتكوين بالمغرب. أجب بالعربية الفصحى وبالأرقام الغربية (0123456789). أحل على النصوص القانونية والتنظيمية والمذكرات الوزارية المؤطرة للمسألة (الرقم والتاريخ والجهة المصدرة)، واعتمد المصادر الرسمية أولا (men.gov.ma ثم sgg.gov.ma ثم مواقع الأكاديميات والمديريات). لا تقدم رقم مذكرة أو تاريخها دون مصدر، وصرح بما لم تتحقق منه. اختم بأثر عملي موجز على مهام الإدارة التربوية.';
+function smPrompt(q){return SM_SYS+'\n\nسؤالي: '+q;}
+function smNow(){return new Date().toISOString();}
+function smAdd(it){const M=smMem();it.id='sm'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);it.d=smNow();M.items.unshift(it);
+ const hist=M.items.filter(x=>!x.star);if(hist.length>150){const drop=new Set(hist.slice(150).map(x=>x.id));M.items=M.items.filter(x=>!drop.has(x.id));}
+ save();return it;}
+function smCopy(t){const ok=()=>toast('✓ نُسخ');if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(ok,()=>smCopyOld(t,ok));else smCopyOld(t,ok);}
+function smCopyOld(t,ok){const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;top:0;opacity:0';document.body.appendChild(a);a.select();try{document.execCommand('copy');ok();}catch(e){toast('تعذر النسخ');}a.remove();}
+function smQv(){const i=$('#smQ');smQ=(i?i.value:smQ).trim();return smQ;}
+function smOpen(k){const q=smQv();if(q.length<2){toast('اكتب موضوع البحث أولا');return;}const s=SM_SRC.find(x=>x[0]===k);const url=s[2](q);
+ smAdd({t:'web',q,src:s[1].replace(/^\S+\s/,''),url});window.open(url,'_blank','noopener');smMemRender();}
+function smAsk(k){const q=smQv();if(q.length<2){toast('اكتب سؤالك أولا');return;}const a=SM_AI.find(x=>x[0]===k);const p=smPrompt(q);
+ smAdd({t:'ext',q,src:a[1],url:a[2](p)});if(k==='gem'){smCopy(p);toast('نُسخ السؤال: الصقه في Gemini');}
+ window.open(a[2](p),'_blank','noopener');smMemRender();}
+function smLocal(){const q=smQv();const box=$('#smLoc');if(!box)return;if(q.length<2){box.innerHTML='';return;}
+ const R=typeof twResults==='function'?twResults(q):[];const M=smMem().items.filter(x=>twMatch([x.q,x.src,x.ans||'',x.note||''].join(' '),q));
+ box.innerHTML=`<div class="twres">${R.length+M.length?`<div class="muted" style="margin-bottom:6px">داخل التطبيق: ${R.length} وثيقة/مذكرة · في ذاكرة البحث: ${M.length}</div>`+
+  R.slice(0,15).map(r=>`<div class="twr" onclick="${r.go}"><span class="tag">${TW_TN[r.tab]}</span> <b>${esc(r.t)}</b><div class="muted">${esc(r.d||'')}</div></div>`).join('')+
+  M.slice(0,3).map(x=>`<div class="twr" onclick="smShow('${x.id}')"><span class="tag">ذاكرة البحث</span> <b>${esc(x.q)}</b><div class="muted">${esc(x.src||'')} · ${fmtD(x.d.slice(0,10))}</div></div>`).join('')
+  :`<p class="muted">لا شيء داخل التطبيق لـ «${esc(q)}». ابحث في المصادر الخارجية أو اسأل الذكاء الاصطناعي.</p>`}</div>`;}
+/* المساعد داخل التطبيق: واجهة Claude البرمجية بمفتاح المستخدم (يبقى في هذا الجهاز فقط) */
+async function smApi(body,key){const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+ let j=null;try{j=await r.json();}catch(e){}if(!r.ok){const m=(j&&j.error&&j.error.message)||('HTTP '+r.status);const er=new Error(m);er.st=r.status;throw er;}return j;}
+async function smAI(){const q=smQv();if(q.length<2){toast('اكتب سؤالك أولا');return;}const c=smCfg();if(!c.key){toast('أدخل مفتاح واجهة Claude في الإعدادات أسفله');const d=$('#smSet');if(d)d.open=true;return;}
+ if(smBusy)return;smBusy=true;smAns={q,txt:'',cites:[],wait:1};smAnsRender();
+ const model=c.model||'claude-sonnet-5-5',web=c.web!==false;let msgs=[{role:'user',content:q}],txt='',cites=[],note='';
+ try{for(let i=0;i<4;i++){const body={model,max_tokens:2500,system:SM_SYS,messages:msgs};if(web)body.tools=[{type:'web_search_20250305',name:'web_search',max_uses:5}];
+   let j;try{j=await smApi(body,c.key);}catch(e){if(web&&e.st===400&&/tool|search/i.test(e.message)&&!note){note='البحث على الويب غير مفعّل في حسابك؛ الجواب من معارف النموذج دون بحث.';delete body.tools;j=await smApi(body,c.key);}else throw e;}
+   (j.content||[]).forEach(b=>{if(b.type==='text'){txt+=b.text;(b.citations||[]).forEach(ct=>{if(ct.url&&!cites.some(x=>x.u===ct.url))cites.push({u:ct.url,t:ct.title||ct.url});});}});
+   if(j.stop_reason!=='pause_turn')break;msgs=[{role:'user',content:q},{role:'assistant',content:j.content}];}
+  smAns={q,txt:txt.trim()||'لم يصل أي نص.',cites,note,model};smAdd({t:'ai',q,src:'Claude داخل التطبيق',ans:smAns.txt,cites,note});
+ }catch(e){smAns={q,err:e.st===401?'المفتاح غير صالح أو ملغى (401).':e.st===429?'تجاوزت حد الطلبات أو الرصيد؛ أعد المحاولة لاحقا (429).':/Failed to fetch|NetworkError/i.test(e.message)?'تعذر الاتصال بالخادم: تحقق من الإنترنت.':e.message};}
+ smBusy=false;smAnsRender();smMemRender();}
+function smMd(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^#{1,4}\s*(.+)$/gm,'<b>$1</b>').replace(/^\s*[-•*]\s+/gm,'• ').replace(/\n/g,'<br>');}
+function smAnsHtml(a){if(!a)return'';if(a.wait)return`<div class="card smans"><p class="muted">⏳ يبحث المساعد ويحرر الجواب… قد يستغرق ذلك دقيقة.</p></div>`;
+ if(a.err)return`<div class="card smans"><div class="note" style="border-color:#c0392b">تعذر الجواب: ${esc(a.err)}</div></div>`;
+ return`<div class="card smans"><h3>🤖 ${esc(a.q)}</h3>${a.note?`<div class="note">${esc(a.note)}</div>`:''}<div class="smtxt">${smMd(a.txt)}</div>
+ ${a.cites&&a.cites.length?`<div class="smcit"><b>المصادر:</b>${a.cites.map((c,i)=>`<div>${i+1}. <a href="${esc(c.u)}" target="_blank" rel="noopener">${esc(c.t)}</a></div>`).join('')}</div>`:''}
+ <div class="row"><button class="btn sm" onclick="smCopy(smAns.txt+(smAns.cites||[]).map((c,i)=>'\\n'+(i+1)+'. '+c.t+' — '+c.u).join(''))">نسخ الجواب</button>
+ <button class="btn sm gold" onclick="smStarLast()">⭐ حفظ في المحفوظات</button>
+ <button class="btn sm out" onclick="smAskAgain()">متابعة في Claude بحسابي</button></div>
+ <p class="muted" style="font-size:12px">جواب آلي: تحقق من أرقام المذكرات وتواريخها في مصدرها الرسمي قبل اعتمادها.</p></div>`;}
+function smAnsRender(){const b=$('#smAns');if(b)b.innerHTML=smAnsHtml(smAns);}
+function smStarLast(){const M=smMem();const x=M.items.find(i=>i.t==='ai'&&i.q===smAns.q);if(x){x.star=true;save();toast('⭐ حُفظ في المحفوظات');smMemRender();}}
+function smAskAgain(){const p=smPrompt(smAns.q)+'\n\nجواب أولي للمراجعة والتدقيق:\n'+smAns.txt;window.open('https://claude.ai/new?q='+smE(p.slice(0,12000)),'_blank','noopener');}
+/* ذاكرة البحث */
+function smStar(id){const x=smMem().items.find(i=>i.id===id);if(!x)return;x.star=!x.star;save();smMemRender();}
+function smDel(id){smMem().items=smMem().items.filter(i=>i.id!==id);save();smMemRender();}
+function smShow(id){const x=smMem().items.find(i=>i.id===id);if(!x)return;if(x.t==='ai'){smAns={q:x.q,txt:x.ans,cites:x.cites||[],note:x.note};smAnsRender();const b=$('#smAns');b&&b.scrollIntoView({behavior:'smooth'});}else if(x.url)window.open(x.url,'_blank','noopener');}
+function smRerun(id){const x=smMem().items.find(i=>i.id===id);if(!x)return;const i=$('#smQ');if(i)i.value=x.q;smQ=x.q;smLocal();i&&i.scrollIntoView({behavior:'smooth'});}
+function smNote(id){const x=smMem().items.find(i=>i.id===id);if(!x)return;const n=prompt('ملاحظة على هذا البحث:',x.note||'');if(n===null)return;x.note=n.trim();if(x.note)x.star=true;save();smMemRender();}
+function smClear(w){const M=smMem();const lbl={hist:'مسح السجل (عمليات البحث غير المحفوظة)',star:'مسح المحفوظات',all:'تصفير ذاكرة البحث كاملة'}[w];
+ const n=w==='hist'?M.items.filter(x=>!x.star).length:w==='star'?M.items.filter(x=>x.star).length:M.items.length;if(!n){toast('لا توجد عناصر لمسحها');return;}
+ if(!confirm(lbl+'؟\nعدد العناصر: '+n+'\nلا يمكن التراجع عن هذا.'))return;M.items=w==='hist'?M.items.filter(x=>x.star):w==='star'?M.items.filter(x=>!x.star):[];save();toast('تم المسح');smMemRender();}
+const SM_IC={web:'🌐',ext:'💬',ai:'🤖'};
+function smMemHtml(){const M=smMem().items;const L=smMemTab==='star'?M.filter(x=>x.star):M.filter(x=>!x.star);const ns=M.filter(x=>x.star).length,nh=M.length-ns;
+ return`<div class="twtabs"><button class="${smMemTab==='star'?'on':''}" onclick="smMemTab='star';smMemRender()">⭐ المحفوظات (${ns})</button><button class="${smMemTab==='hist'?'on':''}" onclick="smMemTab='hist';smMemRender()">🕘 السجل (${nh})</button></div>
+ ${L.length?L.map(x=>`<div class="smit"><div class="smh" onclick="smShow('${x.id}')">${SM_IC[x.t]||'•'} <b>${esc(x.q)}</b> <span class="tag">${esc(x.src||'')}</span><div class="muted" style="font-size:12px">${fmtD(x.d.slice(0,10))} ${x.d.slice(11,16)}${x.note?' — 📝 '+esc(x.note):''}</div></div>
+  <div class="smb"><button title="حفظ/إلغاء الحفظ" onclick="smStar('${x.id}')">${x.star?'⭐':'☆'}</button><button title="ملاحظة" onclick="smNote('${x.id}')">📝</button><button title="إعادة البحث" onclick="smRerun('${x.id}')">↻</button><button title="حذف" onclick="smDel('${x.id}')">🗑</button></div></div>`).join('')
+  :`<p class="muted">${smMemTab==='star'?'لا محفوظات بعد. اضغط ☆ على أي بحث في السجل لحفظه هنا.':'السجل فارغ.'}</p>`}
+ <div class="row" style="margin-top:8px"><button class="btn sm out" onclick="smClear('hist')">مسح السجل</button><button class="btn sm out" onclick="smClear('star')">مسح المحفوظات</button><button class="btn sm red" onclick="smClear('all')">تصفير الذاكرة كاملة</button></div>`;}
+function smMemRender(){const b=$('#smMemBox');if(b)b.innerHTML=smMemHtml();}
+function smSaveCfg(){const k=($('#smKey').value||'').trim(),m=$('#smModel').value,w=$('#smWeb').checked;smCfgSet({key:k,model:m,web:w});toast(k?'حُفظ الإعداد في هذا الجهاز':'حُذف المفتاح');go('smart');}
+function smForget(){if(!confirm('حذف مفتاح واجهة Claude من هذا الجهاز؟'))return;smCfgSet({key:''});go('smart');}
+V.smart=()=>{const c=smCfg();smMem();
+ return title('المواكبة الذكية للبحث','ابحث عن الوثائق والمعلومات داخل التطبيق وفي المصادر الرسمية، واستعن بالذكاء الاصطناعي، واحتفظ بأهم بحوثك في ذاكرة البحث.')+
+ `<div class="card"><input id="smQ" type="search" placeholder="🔎 موضوع البحث أو سؤالك: الغياب غير المبرر، مجلس الانضباط، مذكرة الدخول المدرسي..." value="${esc(smQ)}" oninput="smQ=this.value;smLocal()" onkeydown="if(event.key==='Enter')smLocal()">
+ <div id="smLoc"></div>
+ <h3 style="margin-top:12px">1. البحث في المصادر</h3><div class="row smsrc">${SM_SRC.map(s=>`<button class="btn sm out" onclick="smOpen('${s[0]}')">${s[1]}</button>`).join('')}</div>
+ <p class="muted" style="font-size:12px">تُفتح النتائج في نافذة جديدة من متصفحك، وتبقى في التطبيق عند الرجوع. «Drive» يبحث في ملفاتك بحساب Google المفتوح في متصفحك.</p>
+ <h3 style="margin-top:12px">2. اسأل الذكاء الاصطناعي</h3>
+ <div class="row"><button class="btn gold" onclick="smAI()">🤖 جواب داخل التطبيق${c.key?'':' (يحتاج مفتاحا)'}</button>${SM_AI.map(a=>`<button class="btn sm out" onclick="smAsk('${a[0]}')">💬 ${a[1]}</button>`).join('')}</div>
+ <p class="muted" style="font-size:12px">أزرار «حسابي» تفتح المحادثة في حسابك وسؤالك مكتوب ومؤطر بالمرجعية المغربية. الجواب داخل التطبيق يبحث على الويب ويعرض المصادر، ويحتاج مفتاح واجهة Claude.</p></div>
+ <div id="smAns">${smAnsHtml(smAns)}</div>
+ <div class="card"><h3>🧠 ذاكرة البحث</h3><div id="smMemBox">${smMemHtml()}</div></div>
+ <details class="card" id="smSet"${c.key?'':''}><summary><b>⚙ إعداد المساعد داخل التطبيق (اختياري)</b></summary>
+ <div class="note">المساعد داخل التطبيق يعمل بمفتاح واجهة Claude البرمجية (API) من <b dir="ltr">platform.claude.com</b>، وهو اشتراك مستقل مدفوع حسب الاستعمال، غير اشتراك claude.ai. يُحفظ المفتاح في هذا الجهاز فقط: لا يدخل في النسخ الاحتياطية ولا في المزامنة ولا في الملفات المصدَّرة. لا تستعمله على جهاز مشترك.</div>
+ <div class="row"><div class="fld" style="flex:2;min-width:240px"><label>مفتاح واجهة Claude</label><input id="smKey" type="password" dir="ltr" autocomplete="off" placeholder="sk-ant-..." value="${esc(c.key||'')}"></div>
+ <div class="fld"><label>النموذج</label><select id="smModel">${[['claude-sonnet-5-5','Sonnet 5.5 (متوازن)'],['claude-haiku-5-5','Haiku 5.5 (سريع واقتصادي)'],['claude-opus-5-5','Opus 5.5 (الأدق)']].map(([v,n])=>`<option value="${v}"${(c.model||'claude-sonnet-5-5')===v?' selected':''}>${n}</option>`).join('')}</select></div></div>
+ <label style="display:block;margin:6px 0"><input type="checkbox" id="smWeb"${c.web!==false?' checked':''}> البحث على الويب قبل الجواب (مع عرض المصادر)</label>
+ <div class="row"><button class="btn" onclick="smSaveCfg()">حفظ</button>${c.key?`<button class="btn red sm" onclick="smForget()">حذف المفتاح من الجهاز</button>`:''}</div></details>`;};
+AFTER.smart=()=>{smLocal();};
+(()=>{const i=MODS.findIndex(m=>m[0]==='tawthiq');MODS.splice(i>=0?i+1:MODS.length,0,['smart','المواكبة الذكية للبحث']);
+ const re=()=>{try{renderNav();if(cur==='home'&&document.querySelector('#main .tiles'))go('home');}catch(e){}};re();setTimeout(re,0);})();
+document.head.insertAdjacentHTML('beforeend',`<style>.smsrc .btn{margin:3px}.smit{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--bd);border-radius:8px;padding:8px;margin-bottom:6px;background:#fff}.smh{flex:1;cursor:pointer;min-width:0;overflow-wrap:anywhere}.smb{display:flex;gap:2px;flex-shrink:0}.smb button{border:1px solid var(--bd);background:var(--lt);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:14px}.smtxt{line-height:1.9;margin:8px 0}.smcit{font-size:13px;border-top:1px solid var(--bd);padding-top:6px;margin:8px 0;overflow-wrap:anywhere}</style>`);
 
 /* بطاقة «لون الواجهة» في الإعدادات */
 function mkbThemeSet(k){try{localStorage.setItem('mkb_theme',k);}catch(e){}mkbThemeApply(k);toast('✓ لون الواجهة: '+MKB_THEMES[k][0]);go('settings');}
