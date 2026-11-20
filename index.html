@@ -1723,9 +1723,10 @@ const DC={
 };
 const DC_ORDER=['recv','conv','incid','accid','hear','engag','exit','disc'];
 let dcT='',dcEd=null,dcQ='';
+function dcBack(){return cur==='tawthiq'?'tawthiq':'docs';}
 function dcToday(){return new Date().toISOString().slice(0,10);}
 function dcNow(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
-function dcDef(f){if(f[0]==='date'||f[0]==='rdvD'&&false)return dcToday();if(f[0]==='time')return dcNow();if(f[3]==='@haris')return S.school.haris||'';if(typeof f[3]==='string')return f[3];return f[2]==='chk'?[]:'';}
+function dcDef(f){if(f[2]==='tbl')return f[5]?twTok(f[5]):'';if(typeof f[3]==='string'&&f[3][0]==='@'&&f[3]!=='@haris')return twTok(f[3]);if(f[0]==='date'||f[0]==='rdvD'&&false)return dcToday();if(f[0]==='time')return dcNow();if(f[3]==='@haris')return S.school.haris||'';if(typeof f[3]==='string')return f[3];return f[2]==='chk'?[]:'';}
 function dcStuBox(v,multi){const hasL=S.students.length;
  const pick=hasL?`<div class="row" style="margin-bottom:6px"><div class="fld" style="min-width:120px"><label>القسم</label><select id="dcCl" onchange="dcFillStu()">${classOpts('',true)}</select></div><div class="fld" style="flex:1;min-width:200px"><label>${multi?'إضافة تلميذ(ة)':'اختيار التلميذ(ة)'}</label><select id="dcSt" onchange="dcPickStu(${multi?1:0})"><option value="">— اختر القسم أولا —</option></select></div></div>`:`<p class="muted" style="margin:0 0 6px">لا توجد لوائح محمّلة: أدخل المعطيات يدويا.</p>`;
  if(multi)return pick;
@@ -1737,6 +1738,7 @@ function dcPickStu(multi){const id=$('#dcSt').value;const s=S.students.find(x=>x
 function dcField(f,v){const [k,l,ty,o]=f;const val=v[k]!==undefined?v[k]:dcDef(f);
  if(ty==='stu')return `<div style="flex-basis:100%">${dcStuBox(v,false)}</div>`;
  if(ty==='stus')return `<div class="fld" style="flex-basis:100%"><label>${l}</label>${dcStuBox(v,true)}<textarea data-f="${k}" rows="3" placeholder="اسم التلميذ(ة) — القسم (سطر لكل تلميذ)">${esc(val||'')}</textarea></div>`;
+ if(ty==='tbl')return `<div class="fld" style="flex-basis:100%"><label>${l} <span class="muted" style="font-weight:normal">— سطر لكل صف، والخانات مفصولة بالعلامة | بهذا الترتيب: ${o.map(esc).join(' | ')}</span></label><textarea data-f="${k}" rows="7">${esc(val||'')}</textarea></div>`;
  if(ty==='area')return `<div class="fld" style="flex-basis:100%"><label>${l}</label><textarea data-f="${k}" rows="4">${esc(val||'')}</textarea></div>`;
  if(ty==='sel')return `<div class="fld" style="flex:1;min-width:180px"><label>${l}</label><select data-f="${k}"><option value="">—</option>${o.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
  if(ty==='chk')return `<div class="fld" style="flex-basis:100%"><label>${l}</label><div class="dcchk">${o.map(x=>`<label><input type="checkbox" data-f="${k}" value="${esc(x)}" ${(val||[]).includes(x)?'checked':''}> ${esc(x)}</label>`).join('')}</div></div>`;
@@ -1746,15 +1748,17 @@ function dcSave(pr){const v=dcCollect();const d=DC[dcT];if(d.f.some(f=>f[2]==='s
  if(dcT==='incid'&&!v.facts){toast('أدخل وصف الوقائع');return;}
  let r;if(dcEd){r=S.docs.find(x=>x.id===dcEd);if(r){r.v=v;r.up=Date.now();}}
  if(!r){const n=S.docs.filter(x=>x.t===dcT).reduce((m,x)=>Math.max(m,x.no),0)+1;r={id:'d'+Date.now(),t:dcT,no:n,v,at:Date.now()};S.docs.push(r);}
- save();dcEd=null;toast('تم الحفظ — رقم '+r.no);if(pr)dcPrint(r.t,r);go('docs');}
-function dcDel(id){const r=S.docs.find(x=>x.id===id);if(!r||!confirm(`حذف «${DC[r.t].t}» رقم ${r.no}؟`))return;S.docs=S.docs.filter(x=>x.id!==id);save();go('docs');}
+ save();dcEd=null;toast('تم الحفظ — رقم '+r.no);if(pr)dcPrint(r.t,r);go(dcBack());}
+function dcDel(id){const r=S.docs.find(x=>x.id===id);if(!r||!confirm(`حذف «${DC[r.t].t}» رقم ${r.no}؟`))return;S.docs=S.docs.filter(x=>x.id!==id);save();go(dcBack());}
 function dcRefer(id){const r=S.docs.find(x=>x.id===id);if(!r)return;const first=(r.v.stus||'').split('\n')[0]||'';const [n,c]=first.split(' — ');dcT='disc';dcEd=null;
- window._dcPre={sn:(n||'').trim(),sc:(c||'').trim(),facts:`إحالة بناء على التقرير رقم ${r.no} بتاريخ ${fmtD(r.v.date)}:\n${r.v.facts||''}`};go('docs');}
+ window._dcPre={sn:(n||'').trim(),sc:(c||'').trim(),facts:`إحالة بناء على التقرير رقم ${r.no} بتاريخ ${fmtD(r.v.date)}:\n${r.v.facts||''}`};go(dcBack());}
 function dcAutoOn(){return S.settings.dcAuto!==false;}
 const DC_LN={facts:7,st:8,sum:6,res:5,desc:6,inj:3,def:5,comm:5,stus:3,vict:2,wit:2,obs:3,pres:3,note:3};
 function dcHead(r){const s=S.school,a=dcAutoOn(),d=n=>`<span class="dcdot" style="min-width:${n}em"></span>`,v=(x,n)=>a&&x?esc(x):d(n);
  return `<div class="dchd"><div>المملكة المغربية<br>${esc(s.ministry)}<br>الأكاديمية الجهوية للتربية والتكوين: ${v(s.academie,11)}<br>المديرية الإقليمية: ${v(s.direction,11)}<br>المؤسسة: ${v(s.etab,13)}</div><div class="dchl">الموسم الدراسي: ${esc(s.annee||'')}<br>مصلحة الحراسة العامة<br>رقم: ${r?r.no:'..........'}</div></div>`;}
 function dcVal(f,v,blank){const [k,l,ty,o]=f;const x=blank?'':v[k];const dots=n=>`<span class="dcdot" style="min-width:${n}em"></span>`;
+ if(ty==='tbl'){const n=f[4]||8,L=String(x||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>s.split(/\s*[|\t]\s*/));const pad=L.length?(L.length<n?Math.min(3,n-L.length):0):n;
+  return `<table class="dctbl"><tr>${o.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${L.map(r=>`<tr>${o.map((c,i)=>`<td>${esc(r[i]||'')}</td>`).join('')}</tr>`).join('')}${`<tr>${o.map(()=>'<td></td>').join('')}</tr>`.repeat(pad)}</table>`;}
  if(ty==='chk')return `<div class="dcopts">${o.map(e=>`<span class="dcbox">${!blank&&(x||[]).includes(e)?'☒':'☐'} ${esc(e)}</span>`).join('')}</div>`;
  if(ty==='sel')return x?esc(x):o.map(e=>`<span class="dcbox">☐ ${esc(e)}</span>`).join(' ');
  if(ty==='area'||ty==='stus')return x?`<div style="white-space:pre-wrap;min-height:2.5em">${esc(x)}</div>`:'<div class="dcln"></div>'.repeat(DC_LN[k]||3);
@@ -1764,7 +1768,7 @@ function dcVal(f,v,blank){const [k,l,ty,o]=f;const x=blank?'':v[k];const dots=n=
 function dcPage(t,r,fit){const d=DC[t],v=r?r.v:{},b=!r,sc=S.school,ds=n=>`<span class="dcdot" style="min-width:${n}em"></span>`;
  const val=(k,n)=>!b&&v[k]?esc(v[k]):ds(n);
  const stu=d.f.some(f=>f[2]==='stu')?`<table class="dctb"><tr><th>اسم التلميذ(ة)</th><td style="width:40%">${val('sn',16)}</td><th>القسم</th><td>${val('sc',5)}</td><th>رقم مسار</th><td dir="ltr">${!b&&v.sm?esc(v.sm):''}</td></tr></table>`:'';
- const short=d.f.filter(f=>['date','time','text','sel'].includes(f[2])&&f[0]!=='to'&&f[0]!=='by'),long=d.f.filter(f=>['area','chk','stus'].includes(f[2]));
+ const short=d.f.filter(f=>['date','time','text','sel'].includes(f[2])&&(d.tw||(f[0]!=='to'&&f[0]!=='by'))),long=d.f.filter(f=>['area','chk','stus','tbl'].includes(f[2]));
  let rows='';for(let i=0;i<short.length;i+=2){const a=short[i],c=short[i+1];rows+=`<tr><th>${a[1]}</th><td ${c?'':'colspan="3"'}>${dcVal(a,v,b)}</td>${c?`<th>${c[1]}</th><td>${dcVal(c,v,b)}</td>`:''}</tr>`;}
  const rep=t==='incid'||t==='accid';const by=!b&&v.by?esc(v.by):ds(14);
  const letter=rep?`<div class="dclt"><div>من: الحارس(ة) العام(ة) ${by}</div><div>إلى: ${!b&&v.to?esc(v.to):'السيد(ة) مدير(ة) المؤسسة'}</div><div><b>الموضوع:</b> ${d.t}.</div><p style="text-align:center;margin:6px 0">سلام تام بوجود مولانا الإمام المؤيد بالله، وبعد،</p><p style="margin:0 0 6px">يشرفني أن أرفع إلى علمكم ${t==='incid'?'تفاصيل الواقعة المبينة أسفله التي شهدتها المؤسسة':'ظروف الحادثة المدرسية المبينة أسفله'}، قصد الاطلاع واتخاذ ما ترونه مناسبا.</p></div>`:'';
@@ -1772,10 +1776,10 @@ function dcPage(t,r,fit){const d=DC[t],v=r?r.v:{},b=!r,sc=S.school,ds=n=>`<span 
   exit:'يُؤذن للتلميذ(ة) المذكور(ة) أسفله بمغادرة المؤسسة أثناء أوقات الدراسة، برفقة الشخص المبين اسمه، الذي يتحمل مسؤوليته ابتداء من ساعة المغادرة.',
   recv:'استقبلت الحراسة العامة بالمؤسسة ولي(ة) أمر التلميذ(ة) المذكور(ة) أسفله، وحُرِّر هذا المحضر بما راج خلال اللقاء.',
   hear:'تم الاستماع إلى التلميذ(ة) المذكور(ة) أسفله بمكتب الحراسة العامة، ودُوِّنت تصريحاته(ا) كما وردت.',
-  engag:'',disc:'اجتمع مجلس القسم بصفته الانضباطية للنظر في المخالفة المنسوبة إلى التلميذ(ة) المذكور(ة) أسفله، بعد استدعاء ولي أمره والاستماع إليه.'}[t]||'';
+  engag:'',disc:'اجتمع مجلس القسم بصفته الانضباطية للنظر في المخالفة المنسوبة إلى التلميذ(ة) المذكور(ة) أسفله، بعد استدعاء ولي أمره والاستماع إليه.'}[t]||d.in||'';
  const conv=t==='conv'?`<div class="dccut"><div style="text-align:center;font-weight:bold">إشعار بالتوصل — يُعاد إلى الحراسة العامة</div>أنا الموقع(ة) أسفله ولي(ة) أمر التلميذ(ة): ${val('sn',14)} بقسم: ${val('sc',4)}، أشهد بتوصلي بالاستدعاء رقم ${b?'......':r.no}.<div style="display:flex;justify-content:space-between;margin-top:8px"><span>التاريخ: ....../....../20......</span><span>توقيع ولي(ة) الأمر: ............................</span></div></div>`:'';
  const place=`<div class="dcplace">حُرِّر بـ: ${ds(10)} في: ${!b&&v.date?`<span dir="ltr" style="unicode-bidi:isolate">${fmtD(v.date)}</span>`:'....../....../20......'}</div>`;
- const body=`${dcHead(r)}<div class="dcti">${d.t}</div>${letter}${intro?`<p class="dcin">${intro}</p>`:''}
+ const body=`${d.svc?dcHead(r).replace('مصلحة الحراسة العامة',d.svc):dcHead(r)}<div class="dcti">${d.t}</div>${letter}${intro?`<p class="dcin">${intro}</p>`:''}
  ${stu}${rows?`<table class="dctb">${rows}</table>`:''}${long.map(f=>`<div class="dcbl"><b>${f[1]}:</b>${dcVal(f,v,b)}</div>`).join('')}
  ${place}<div class="dcsg">${d.sg.map(x=>`<div>${x}<div class="dcsgl">الاسم والتوقيع</div></div>`).join('')}</div>${conv}`;
  return fit?`<div class="pg fit dcpg"><div class="fitin">${body}</div></div>`:`<div class="pg dcpg">${body}</div>`;}
@@ -1787,21 +1791,21 @@ V.docs=()=>{if(!S.docs)S.docs=[];
  const tiles=dcTiles();
  const sc=S.school,miss=['etab','academie','direction'].filter(k=>!sc[k]).length;
  const intro=title('وثائق الاستعمال اليومي','نماذج جاهزة للحارس(ة) العام(ة) والمتصرف(ة) التربوي(ة): تُملأ وتُحفظ في سجل مرقّم وتُطبع، أو تُطبع فارغة للملء اليدوي.')+
- `<div class="card"><h3>ترويسة الوثائق</h3><label style="display:flex;align-items:center;gap:8px;font-weight:bold;cursor:pointer"><input type="checkbox" style="width:20px;height:20px" ${dcAutoOn()?'checked':''} onchange="S.settings.dcAuto=this.checked;save();go('docs')"> ملء الترويسة تلقائيا (اسم المؤسسة، الأكاديمية، المديرية)</label>
+ `<div class="card"><h3>ترويسة الوثائق</h3><label style="display:flex;align-items:center;gap:8px;font-weight:bold;cursor:pointer"><input type="checkbox" style="width:20px;height:20px" ${dcAutoOn()?'checked':''} onchange="S.settings.dcAuto=this.checked;save();go(dcBack())"> ملء الترويسة تلقائيا (اسم المؤسسة، الأكاديمية، المديرية)</label>
  <p class="muted" style="margin:6px 0 0">${dcAutoOn()?`تُملأ من الإعدادات: المؤسسة: <b>${esc(sc.etab||'—')}</b> · الأكاديمية: <b>${esc(sc.academie||'—')}</b> · المديرية: <b>${esc(sc.direction||'—')}</b>${miss?` — المعطيات الناقصة تُترك فارغة؛ يمكن إتمامها في <a href="#" onclick="go('settings');return false">الإعدادات</a>.`:''}`:'الخانات الثلاث تُترك فارغة (نقط) للملء اليدوي.'}</p></div>`;
- if(!dcT)return intro+tiles+`<div class="card"><h3>سجل الوثائق المحررة (${S.docs.length})</h3>${S.docs.length?dcReg(S.docs):'<p class="muted">لم تُحرَّر أي وثيقة بعد. اختر نموذجا أعلاه.</p>'}</div>`;
+ if(!dcT)return intro+tiles+`<div class="card"><h3>سجل الوثائق المحررة (${S.docs.filter(x=>!(DC[x.t]&&DC[x.t].tw)).length})</h3>${S.docs.filter(x=>!(DC[x.t]&&DC[x.t].tw)).length?dcReg(S.docs.filter(x=>!(DC[x.t]&&DC[x.t].tw))):'<p class="muted">لم تُحرَّر أي وثيقة بعد. اختر نموذجا أعلاه.</p>'}</div>`;
  const d=DC[dcT];const rec=dcEd?S.docs.find(x=>x.id===dcEd):null;const v=rec?rec.v:(window._dcPre||{});window._dcPre=null;
  return intro+tiles+`<div class="card" style="border-color:var(--gold)"><h3>${d.t}${rec?` — تعديل رقم ${rec.no}`:''}</h3>
  <details style="margin-bottom:10px"><summary style="cursor:pointer;color:var(--g);font-weight:bold">الإطار المرجعي وتوجيهات عملية</summary><ul style="margin:6px 0">${d.r.map(x=>`<li>${x}</li>`).join('')}</ul><ul class="muted" style="margin:6px 0">${d.tip.map(x=>`<li>${x}</li>`).join('')}</ul></details>
  <div id="dcForm" class="row">${d.f.map(f=>dcField(f,v)).join('')}</div>
- <div class="row" style="margin-top:10px;gap:6px"><button class="btn" onclick="dcSave(1)">حفظ وطباعة</button><button class="btn out" onclick="dcSave(0)">حفظ فقط</button><button class="btn out" onclick="dcPrint('${dcT}',null)">طباعة نموذج فارغ</button><button class="btn out" onclick="dcPrev('${dcT}',null)">معاينة النموذج</button>${rec?`<button class="btn out" onclick="dcEd=null;go('docs')">إلغاء التعديل</button>`:''}<button class="btn out" onclick="dcT='';dcEd=null;go('docs')">رجوع</button></div></div>
+ <div class="row" style="margin-top:10px;gap:6px"><button class="btn" onclick="dcSave(1)">حفظ وطباعة</button><button class="btn out" onclick="dcSave(0)">حفظ فقط</button><button class="btn out" onclick="dcPrint('${dcT}',null)">طباعة نموذج فارغ</button><button class="btn out" onclick="dcPrev('${dcT}',null)">معاينة النموذج</button>${rec?`<button class="btn out" onclick="dcEd=null;go(dcBack())">إلغاء التعديل</button>`:''}<button class="btn out" onclick="dcT='';dcEd=null;go(dcBack())">رجوع</button></div></div>
  <div id="dcPv"></div><div class="card"><h3>سجل: ${d.t} (${S.docs.filter(x=>x.t===dcT).length})</h3>${dcReg(S.docs.filter(x=>x.t===dcT))}</div>`;};
-function dcTiles(){return `<div class="dctiles">${DC_ORDER.map(k=>{const n=S.docs.filter(x=>x.t===k).length;return `<div class="dctile ${k===dcT?'on':''}" onclick="dcT='${k}';dcEd=null;go('docs')"><b>${DC[k].t}</b><span>${DC[k].d}</span><i>${n?n+' محفوظ':'—'}</i></div>`;}).join('')}</div>`;}
+function dcTiles(){return `<div class="dctiles">${DC_ORDER.map(k=>{const n=S.docs.filter(x=>x.t===k).length;return `<div class="dctile ${k===dcT?'on':''}" onclick="dcT='${k}';dcEd=null;go(dcBack())"><b>${DC[k].t}</b><span>${DC[k].d}</span><i>${n?n+' محفوظ':'—'}</i></div>`;}).join('')}</div>`;}
 function dcReg(L){if(!L.length)return '<p class="muted">لا شيء بعد.</p>';
  const q=normAr(dcQ);const F=L.filter(r=>!q||normAr(JSON.stringify(r.v)+DC[r.t].t).includes(q)).slice().sort((a,b)=>(b.v.date||'').localeCompare(a.v.date||'')||b.at-a.at);
- return `<div class="fld" style="max-width:320px"><input placeholder="بحث (اسم، قسم، كلمة...)" value="${esc(dcQ)}" oninput="dcQ=this.value;clearTimeout(window._dq);window._dq=setTimeout(()=>{go('docs');const e=document.querySelector('input[placeholder^=بحث]');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},350)"></div>
+ return `<div class="fld" style="max-width:320px"><input placeholder="بحث (اسم، قسم، كلمة...)" value="${esc(dcQ)}" oninput="dcQ=this.value;clearTimeout(window._dq);window._dq=setTimeout(()=>{go(dcBack());const e=document.querySelector('input[placeholder^=بحث]');if(e){e.focus();e.setSelectionRange(e.value.length,e.value.length);}},350)"></div>
  <div style="overflow:auto"><table class="tb"><tr><th>الوثيقة</th><th>رقم</th><th>التاريخ</th><th>المعني(ون)</th><th>إجراءات</th></tr>${F.map(r=>`<tr><td>${DC[r.t].t}</td><td class="n">${r.no}</td><td class="n" dir="ltr">${fmtD(r.v.date)}</td><td>${esc(r.v.sn?r.v.sn+(r.v.sc?' — '+r.v.sc:''):(r.v.stus||'').split('\n').filter(Boolean).length+' تلميذ(ة)')}</td>
- <td style="white-space:nowrap"><button class="btn sm" onclick="dcPrint('${r.t}',S.docs.find(x=>x.id==='${r.id}'))">طباعة</button> <button class="btn out sm" onclick="dcPrev('${r.t}','${r.id}')">معاينة</button> <button class="btn out sm" onclick="dcT='${r.t}';dcEd='${r.id}';go('docs');window.scrollTo(0,0)">تعديل</button>${r.t==='incid'?` <button class="btn out sm" onclick="dcRefer('${r.id}')">إحالة على مجلس القسم</button>`:''} <button class="btn out sm" style="color:#B00020" onclick="dcDel('${r.id}')">حذف</button></td></tr>`).join('')}</table></div>`;}
+ <td style="white-space:nowrap"><button class="btn sm" onclick="dcPrint('${r.t}',S.docs.find(x=>x.id==='${r.id}'))">طباعة</button> <button class="btn out sm" onclick="dcPrev('${r.t}','${r.id}')">معاينة</button> <button class="btn out sm" onclick="dcT='${r.t}';dcEd='${r.id}';go(dcBack());window.scrollTo(0,0)">تعديل</button>${r.t==='incid'?` <button class="btn out sm" onclick="dcRefer('${r.id}')">إحالة على مجلس القسم</button>`:''} <button class="btn out sm" style="color:#B00020" onclick="dcDel('${r.id}')">حذف</button></td></tr>`).join('')}</table></div>`;}
 (()=>{const st=document.createElement('style');st.textContent=`
 .dctiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:12px}
 .dctile{border:1px solid var(--bd);border-radius:10px;padding:10px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:4px;border-right:4px solid var(--g)}
@@ -1927,7 +1931,7 @@ function sxPage(t,r,fit){const d=DC[t],v=r?r.v:{},b=!r,sc=S.school,a=dcAutoOn(),
 function dcGo(id,to){const r=S.docs.find(x=>x.id===id);if(!r)return;const v=r.v;let p={};
  if(r.t==='infr'&&to==='warn')p={sn:v.sn,sc:v.sc,sm:v.sm,prof:v.prof,subj:v.subj,dFact:v.date,slot:[v.seance,v.tFrom&&v.tTo?v.tFrom+' - '+v.tTo:''].filter(Boolean).join(' / '),dRecv:v.dRecv,place:v.place,facts:v.facts};
  else if(to==='disc'){const vi=r.t==='viol';p={sn:vi?v.nm_1:v.sn,sc:vi?v.cl_1:v.sc,sm:v.sm||'',facts:`إحالة بناء على «${DC[r.t].t}» رقم ${r.no} بتاريخ ${fmtD(v.date||v.dIn)}:\n${v.facts||''}`};}
- dcT=to;dcEd=null;window._dcPre=p;go('docs');window.scrollTo(0,0);}
+ dcT=to;dcEd=null;window._dcPre=p;go(dcBack());window.scrollTo(0,0);}
 (()=>{const base=dcReg;dcReg=function(L){let h=base(L);
  L.forEach(r=>{const del=`<button class="btn out sm" style="color:#B00020" onclick="dcDel('${r.id}')">حذف</button>`;let add='';
   if(r.t==='infr')add=`<button class="btn out sm" onclick="dcGo('${r.id}','warn')">تنبيه كتابي</button> <button class="btn out sm" onclick="dcGo('${r.id}','disc')">إحالة على مجلس القسم</button> `;
@@ -2010,7 +2014,7 @@ DC_ORDER.splice(4,0,'ntf','drop','cheat','ecoute','alt','suivi','meet','stf','sc
 Object.assign(DC_ART,{ntf:['a15'],drop:['a15'],cheat:['l0213','a15'],ecoute:['a15','a29'],alt:['m867','a29','a30'],suivi:['a15'],meet:['a29','a30'],stf:['a15'],sco:[]});
 Object.assign(DC_LN,{agenda:4,dl:6,att:3,follow:3,why:2});
 const DC_GRP=[['الانضباط والسلوك',['infr','warn','viol','incid','hear','engag','disc','alt','ecoute']],['الغياب والمواظبة ومحاربة الانقطاع',['absn','ntf','drop','exit']],['التواصل مع الأسر',['recv','conv']],['التتبع الفردي والحوادث المدرسية',['suivi','accid']],['الامتحانات',['cheat']],['الشؤون الإدارية',['meet','stf','sco']]];
-dcTiles=function(){return DC_GRP.map(([g,L])=>`<div class="dcgrp">${g}</div><div class="dctiles">${L.filter(k=>DC[k]).map(k=>{const n=S.docs.filter(x=>x.t===k).length;return `<div class="dctile ${k===dcT?'on':''}" onclick="dcT='${k}';dcEd=null;go('docs')"><b>${DC[k].t}</b><span>${DC[k].d}</span><i>${n?n+' محفوظ':'—'}</i></div>`;}).join('')}</div>`).join('');};
+dcTiles=function(){return DC_GRP.map(([g,L])=>`<div class="dcgrp">${g}</div><div class="dctiles">${L.filter(k=>DC[k]).map(k=>{const n=S.docs.filter(x=>x.t===k).length;return `<div class="dctile ${k===dcT?'on':''}" onclick="dcT='${k}';dcEd=null;go(dcBack())"><b>${DC[k].t}</b><span>${DC[k].d}</span><i>${n?n+' محفوظ':'—'}</i></div>`;}).join('')}</div>`).join('');};
 /* ---- حقول: مخفي، زر، جدول متعدد الأسطر ---- */
 (()=>{const base=dcField;dcField=function(f,v){const [k,l,ty,o]=f;
  if(ty==='hid')return `<input type="hidden" data-f="${k}" value="${esc(v[k]||'')}">`;
@@ -2188,7 +2192,7 @@ MODS.splice(MODS.findIndex(m=>m[0]==='daily'),0,['gsday','التقرير الي�
 const SR_KW={parents:'الآباء الأسر أولياء الأمور الهاتف أرقام اتصال رسالة واتساب عتبة',register:'تسجيل الغياب سجل الحصص اليومي التأخر',absheet:'ورقة الغياب طباعة لائحة',admit:'ورقة الدخول السماح',reports:'إحصاءات تقارير عتبة سقف التنبيه',settings:'إعدادات نسخة احتياطية حفظ استرجاع مسح المعطيات المؤسسة',import:'لوائح مسار استيراد تحميل',timetable:'استعمال الزمن جداول الحصص pdf',legalref:'قوانين مذكرات مراسيم نصوص قانونية مرجعيات',docs:'نماذج وثائق محاضر تقارير استدعاء',daily:'حصيلة العمل الإحصاءات اليومية الأسبوعية مؤشرات',gsday:'مهام الحارس العام المنجزة محاور سجل الحراسة الصعوبات تقرير يومي',assid:'نقطة المواظبة السلوك',n4:'نقطة',files:'انتقال ملفات وافدون مغادرون',pass:'القن السري كلمة المرور مسار',tayssir:'تيسير وصولات منح',calendar:'العطل اليومية السنوية',councils:'مجلس القسم مجالس الأقسام قرارات',search:'بحث تلميذ',stats:'إحصاء التلاميذ أعمار',lists:'لوائح الأقسام طباعة',arrange:'ترتيب ملفات التلاميذ'};
 function srIndex(){const L=[];let g='';
  MODS.forEach(m=>{if(m[0]==='g'){g=m[1];return;}L.push({l:m[1],g,a:`go('${m[0]}')`,k:SR_KW[m[0]]||''});});
- if(typeof DC!=='undefined')Object.keys(DC).forEach(k=>L.push({l:DC[k].t,g:'وثائق الاستعمال اليومي',a:`dcT='${k}';dcEd=null;go('docs')`,k:(DC[k].d||'')+(k==='meet'?' مجلس التدبير المجلس التربوي':'')}));
+ if(typeof DC!=='undefined')Object.keys(DC).forEach(k=>L.push({l:DC[k].t,g:'وثائق الاستعمال اليومي',a:`dcT='${k}';dcEd=null;go(dcBack())`,k:(DC[k].d||'')+(k==='meet'?' مجلس التدبير المجلس التربوي':'')}));
  L.push({l:'عداد أوراق الدخول',g:'سجل الغياب',a:`rgTab='grant';grSub='stats';go('register')`,k:'ورقة الدخول أوراق عدد'},
   {l:'منح أوراق الدخول جماعيا',g:'سجل الغياب',a:`rgTab='grant';grSub='quick';go('register')`,k:'ورقة الدخول أوراق منح جماعي'},
   {l:'الحصيلة الأسبوعية',g:'الحصيلة اليومية والأسبوعية',a:`drMode='week';go('daily')`,k:'أسبوع تقرير أسبوعي'},{l:'الحصيلة الأسبوعية لمهام الحارس العام',g:'التقرير اليومي للحارس العام',a:`gxMode='week';go('gsday')`,k:'أسبوع مهام محاور'},
@@ -2394,9 +2398,9 @@ slipBulkDlg=function(){rgTab='grant';grSub='quick';go('register');window.scrollT
 DC.slips={t:'قسائم ورقة السماح بالدخول',d:'طباعة قسائم فارغة وإعادة طباعة المسجلة وتعديل النموذج',special:1,f:[],r:[],tip:[],sg:[]};
 (()=>{const g=DC_GRP.find(x=>x[0].startsWith('الغياب'));if(g&&!g[1].includes('slips'))g[1].unshift('slips');})();
 (()=>{const base=V.docs;V.docs=()=>{if(dcT!=='slips')return base();const t=SL();let h=V.admit();const k=h.indexOf('<div class="card"><h3>سجل القسائم');h=k>=0?h.slice(k):'';
- h=h.replace(/<button class="btn sm" onclick="admEdit=\d+;go\('admit'\)">تعديل<\/button> /g,'').replace(/go\('admit'\)/g,"go('docs')");
+ h=h.replace(/<button class="btn sm" onclick="admEdit=\d+;go\('admit'\)">تعديل<\/button> /g,'').replace(/go\('admit'\)/g,"go(dcBack())");
  return title('وثائق الاستعمال اليومي','نماذج جاهزة للحارس(ة) العام(ة) والمتصرف(ة) التربوي(ة).')+dcTiles()+
- `<div class="card" style="border-color:var(--gold)"><h3>قسائم ورقة السماح بالدخول</h3><div class="row" style="align-items:flex-end;gap:8px"><div class="fld"><label>عدد القسائم في الصفحة</label><select onchange="SL().perPage=+this.value;save();go('docs')">${[4,6,8,10].map(n=>`<option ${t.perPage===n?'selected':''}>${n}</option>`).join('')}</select></div><button class="btn" onclick="admBlank()">طباعة ${t.perPage} قسائم فارغة</button><button class="btn out" onclick="rgTab='grant';grSub='quick';go('register')">منح أوراق الدخول ←</button></div>
+ `<div class="card" style="border-color:var(--gold)"><h3>قسائم ورقة السماح بالدخول</h3><div class="row" style="align-items:flex-end;gap:8px"><div class="fld"><label>عدد القسائم في الصفحة</label><select onchange="SL().perPage=+this.value;save();go(dcBack())">${[4,6,8,10].map(n=>`<option ${t.perPage===n?'selected':''}>${n}</option>`).join('')}</select></div><button class="btn" onclick="admBlank()">طباعة ${t.perPage} قسائم فارغة</button><button class="btn out" onclick="rgTab='grant';grSub='quick';go('register')">منح أوراق الدخول ←</button></div>
  <p class="muted" style="margin:6px 0 0">منح الأوراق وتسجيلها يتم من «تسجيل الغياب اليومي ← منح أوراق الدخول». هنا تُطبع القسائم الفارغة ويُعاد طبع المسجلة ويُعدَّل نموذج القسيمة.</p></div>`+h;};})();
 (()=>{const b=AFTER.docs;AFTER.docs=()=>{if(b)b();if(dcT==='slips'&&$('#adPrev'))admPrev();};})();
 (()=>{const st=document.createElement('style');st.textContent=`
@@ -2645,10 +2649,10 @@ async function impFile(f){const nm=f.name.replace(/\.(pdf|docx?)$/i,'');const ex
  if(ext==='doc'){alert('صيغة .doc القديمة غير مدعومة. افتح الملف في Word واحفظه بصيغة .docx ثم استورده.');return;}
  if(!['pdf','docx'].includes(ext)){toast('اختر ملف PDF أو Word (docx)');return;}
  toast('جارٍ استيراد الوثيقة…');const u8=new Uint8Array(await f.arrayBuffer());const id='im'+Date.now().toString(36);
- try{let meta={id,name:nm,type:ext,at:Date.now(),grp:'نماذجي المستوردة'};
+ try{let meta={id,name:nm,type:ext,at:Date.now(),grp:'نماذجي المستوردة'};if(window._twImp&&cur==='tawthiq'){meta.tw=window._twImp;meta.grp='التوثيق الإداري';}window._twImp=null;
   if(ext==='docx'){const r=await docx2html(u8);meta.land=r.land;await imDbPut(id,{html:r.html,orig:r.html,docx:u8});}
   else{const L=await loadPdfJs();const pdf=await L.getDocument({data:u8.slice()}).promise;meta.pages=pdf.numPages;const p1=await pdf.getPage(1);const v=p1.getViewport({scale:1});meta.land=v.width>v.height;await imDbPut(id,{pdf:u8});}
-  S.imports.push(meta);save();dcT='imp:'+id;toast('استُوردت الوثيقة: '+nm);go('docs');}
+  S.imports.push(meta);save();dcT='imp:'+id;toast('استُوردت الوثيقة: '+nm);go(dcBack());}
  catch(e){console.error(e);alert('تعذر استيراد الوثيقة: '+(e.message||e));}}
 /* ---- العرض والتعبئة ---- */
 let impCur=null;
@@ -2657,11 +2661,11 @@ async function impOpen(id){const m=S.imports.find(x=>x.id===id),box=$('#imView')
  if(m.type==='docx'){box.innerHTML=`<div class="impg${m.land?' land':''}"><div id="imEd" class="imdoc" contenteditable="true" spellcheck="false">${d.html}</div></div>`;}
  else{const L=await loadPdfJs();const pdf=await L.getDocument({data:d.pdf.slice()}).promise;box.innerHTML='';for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i);const v=pg.getViewport({scale:2});const c=document.createElement('canvas');c.width=v.width;c.height=v.height;await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise;const im=document.createElement('img');im.src=c.toDataURL('image/jpeg',0.9);im.className='impdf';box.appendChild(im);}}}
 async function impSave(asNew){if(!impCur||impCur.m.type!=='docx')return;const h=$('#imEd').innerHTML;
- if(asNew){const nm=prompt('اسم النسخة الجديدة:',impCur.m.name+' (معبأة)');if(!nm)return;const id='im'+Date.now().toString(36);await imDbPut(id,{html:h,orig:impCur.d.orig||h});S.imports.push({...impCur.m,id,name:nm,at:Date.now()});save();dcT='imp:'+id;toast('حُفظت نسخة جديدة');go('docs');return;}
+ if(asNew){const nm=prompt('اسم النسخة الجديدة:',impCur.m.name+' (معبأة)');if(!nm)return;const id='im'+Date.now().toString(36);await imDbPut(id,{html:h,orig:impCur.d.orig||h});S.imports.push({...impCur.m,id,name:nm,at:Date.now()});save();dcT='imp:'+id;toast('حُفظت نسخة جديدة');go(dcBack());return;}
  impCur.d.html=h;await imDbPut(impCur.m.id,impCur.d);toast('حُفظت التعديلات');}
 async function impReset(){if(!impCur||!confirm('إرجاع الوثيقة إلى صيغتها الأصلية عند الاستيراد؟'))return;if(impCur.d.docx){try{const r=await docx2html(impCur.d.docx);impCur.d.orig=r.html;}catch(e){}}impCur.d.html=impCur.d.orig;await imDbPut(impCur.m.id,impCur.d);impOpen(impCur.m.id);}
-async function impDel(id){const m=S.imports.find(x=>x.id===id);if(!m||!confirm(`حذف الوثيقة المستوردة «${m.name}» من التطبيق؟`))return;S.imports=S.imports.filter(x=>x.id!==id);save();try{await imDbDel(id);}catch(e){}dcT='';toast('حُذفت الوثيقة');go('docs');}
-function impRen(id){const m=S.imports.find(x=>x.id===id);const n=prompt('الاسم الجديد:',m.name);if(n&&n.trim()){m.name=n.trim();save();go('docs');}}
+async function impDel(id){const m=S.imports.find(x=>x.id===id);if(!m||!confirm(`حذف الوثيقة المستوردة «${m.name}» من التطبيق؟`))return;S.imports=S.imports.filter(x=>x.id!==id);save();try{await imDbDel(id);}catch(e){}dcT='';toast('حُذفت الوثيقة');go(dcBack());}
+function impRen(id){const m=S.imports.find(x=>x.id===id);const n=prompt('الاسم الجديد:',m.name);if(n&&n.trim()){m.name=n.trim();save();go(dcBack());}}
 function impPrint(){if(!impCur)return;const m=impCur.m;let html='';
  if(m.type==='docx'){const h=$('#imEd').innerHTML;const parts=h.split('<div class="imbrk"></div>');html=parts.map(p=>`<div class="pg fit dcpg imprint${m.land?' land':''}"><div class="fitin imdoc">${p}</div></div>`).join('');}
  else html=[...document.querySelectorAll('#imView img.impdf')].map(im=>`<div class="pg imprint${m.land?' land':''}" style="overflow:hidden"><img src="${im.src}" style="width:100%;display:block"></div>`).join('');
@@ -2669,7 +2673,7 @@ function impPrint(){if(!impCur)return;const m=impCur.m;let html='';
   P.querySelectorAll('.dcpg').forEach(pg=>{const inn=pg.querySelector('.fitin');inn.style.width=W+'px';const sh=inn.scrollHeight;if(sh>H*1.25){pg.classList.remove('fit');return;}let z=Math.min(1,H/sh);inn.style.zoom=z;inn.style.width=(W/z)+'px';pg.style.height=H+'px';pg.style.overflow='hidden';});P.style.cssText='';setTimeout(()=>window.print(),120);}
  else{$('#print').innerHTML=html;setTimeout(()=>window.print(),120);}}
 /* ---- دمج في تبويب الوثائق ---- */
-(()=>{const b=dcTiles;dcTiles=function(){const L=S.imports||[];return b()+`<div class="dcgrp">نماذجي المستوردة (${L.length})</div><div class="dctiles">${L.map(m=>`<div class="dctile ${dcT==='imp:'+m.id?'on':''}" onclick="dcT='imp:${m.id}';go('docs')"><b>${esc(m.name)}</b><span>${m.type==='pdf'?`PDF — ${m.pages||''} صفحة`:'Word قابل للتعبئة'}</span><i>${fmtD(new Date(m.at).toISOString().slice(0,10))}</i></div>`).join('')}<div class="dctile imadd" onclick="impPick()"><b>+ استيراد وثيقة</b><span>PDF أو Word (docx)</span><i>من الهاتف أو الحاسوب</i></div></div>`;};})();
+(()=>{const b=dcTiles;dcTiles=function(){const L=(S.imports||[]).filter(m=>!m.tw);return b()+`<div class="dcgrp">نماذجي المستوردة (${L.length})</div><div class="dctiles">${L.map(m=>`<div class="dctile ${dcT==='imp:'+m.id?'on':''}" onclick="dcT='imp:${m.id}';go(dcBack())"><b>${esc(m.name)}</b><span>${m.type==='pdf'?`PDF — ${m.pages||''} صفحة`:'Word قابل للتعبئة'}</span><i>${fmtD(new Date(m.at).toISOString().slice(0,10))}</i></div>`).join('')}<div class="dctile imadd" onclick="impPick()"><b>+ استيراد وثيقة</b><span>PDF أو Word (docx)</span><i>من الهاتف أو الحاسوب</i></div></div>`;};})();
 (()=>{const base=V.docs;V.docs=()=>{if(!String(dcT).startsWith('imp:'))return base();const id=dcT.slice(4),m=(S.imports||[]).find(x=>x.id===id);if(!m){dcT='';return base();}
  return title('وثائق الاستعمال اليومي','نماذج جاهزة للحارس(ة) العام(ة) والمتصرف(ة) التربوي(ة).')+dcTiles()+
  `<div class="card" style="border-color:var(--gold)"><h3>${esc(m.name)} <span class="tag">${m.type==='pdf'?'PDF':'Word'}</span></h3>
@@ -2686,7 +2690,7 @@ function impPrint(){if(!impCur)return;const m=impCur.m;let html='';
 .imbrk{border-top:2px dashed #bbb;margin:10px 0}.imprint .imbrk,.imprint .imtxb{border:0}.impdf{width:100%;max-width:820px;display:block;margin:0 auto 10px;box-shadow:0 2px 10px rgba(0,0,0,.15);background:#fff}
 #imEd:focus{box-shadow:0 0 0 2px #F6E7C1}`;document.head.appendChild(st);})();
 /* البحث: إدراج الوثائق المستوردة */
-(()=>{const b=srIndex;srIndex=function(){const L=b();(S.imports||[]).forEach(m=>L.push({l:m.name,g:'نماذجي المستوردة',a:`dcT='imp:${m.id}';go('docs')`,k:'مستورد '+m.type}));L.push({l:'استيراد وثيقة PDF أو Word',g:'وثائق الاستعمال اليومي',a:`go('docs');setTimeout(impPick,200)`,k:'استيراد رفع نموذج'});return L;};})();
+(()=>{const b=srIndex;srIndex=function(){const L=b();(S.imports||[]).forEach(m=>L.push({l:m.name,g:'نماذجي المستوردة',a:`dcT='imp:${m.id}';go(dcBack())`,k:'مستورد '+m.type}));L.push({l:'استيراد وثيقة PDF أو Word',g:'وثائق الاستعمال اليومي',a:`go(dcBack());setTimeout(impPick,200)`,k:'استيراد رفع نموذج'});return L;};})();
 
 /* ---- شريط تنسيق الخط للوثائق المستوردة ---- */
 const IM_FONTS=['Arial','Traditional Arabic','Simplified Arabic','Sakkal Majalla','Times New Roman','Tahoma','Calibri'];
@@ -2977,7 +2981,7 @@ let pcStu=null,pcDocStu=null;
 const PC_DOCS=[['conv','لدعوة الولي إلى الحضور للمؤسسة في موعد محدد، مع إشعار بالتوصل.'],['recv','لتوثيق اللقاء مع الولي وما اتُّفق عليه من التزامات.'],['absn','لإشعار الولي بالحضور للإخبار بغياب ابنه/ابنته.'],['ntf','لإشعار الولي كتابيا بالتغيبات غير المبررة.'],['engag','التزام مكتوب يوقعه التلميذ(ة) وولي أمره.'],['warn','تنبيه كتابي يُطلع عليه الولي ويوقعه.'],['exit','إذن بمغادرة المؤسسة بحضور الولي أو من ينوب عنه.'],['sco','شهادة مدرسية يطلبها الولي.'],['drop','رصد حالة انقطاع والتواصل مع الأسرة لإرجاع التلميذ(ة).'],['ecoute','إحالة على خلية الإنصات والوساطة بعد التواصل مع الأسرة.'],['suivi','التتبع الفردي ومنه سجل اللقاءات مع الولي.']];
 function pcDocList(){return PC_DOCS.filter(([k])=>typeof DC!=='undefined'&&DC[k]);}
 function pcPre(id){const s=S.students.find(x=>x.id===id);if(!s)return{};const o=phOf(id);const p={sn:fullName(s),sc:s.classe,sm:s.code||''};if(o.name)p.parent=o.name;if(o.rel)p.rel=o.rel;const ph=[o.p1,o.p2].filter(Boolean).join(' / ');if(ph)p.phone=ph;return p;}
-function pcOpenDoc(k,id){dcT=k;dcEd=null;window._dcPre=id?pcPre(id):null;go('docs');}
+function pcOpenDoc(k,id){dcT=k;dcEd=null;window._dcPre=id?pcPre(id):null;go(dcBack());}
 /* البحث */
 function pcSrch(inp,box,fn){const q=inp.value,b=document.getElementById(box);const R=rgFind(q);if(!q.trim()){b.style.display='none';b.innerHTML='';b._first=null;return;}
  b.style.display='block';b.innerHTML=R.length?R.map((s,i)=>{const ph=phMain(s.id);return `<div class="srit${i===0?' on':''}" onclick="${fn}('${esc(s.id)}')"><b>${srHi(fullName(s),q)}</b><span>القسم: ${esc(s.classe)} — رقم ${s.rank}${s.code?` — <bdi>${esc(s.code)}</bdi>`:''} — ${ph?`📞 <bdi>${esc(ph)}</bdi>`:'<i style="color:#B00020">بلا رقم هاتف</i>'}</span></div>`;}).join(''):'<div class="srno">لا يوجد تلميذ(ة) مطابق(ة).</div>';b._first=R[0]?R[0].id:null;}
@@ -3020,7 +3024,7 @@ let _pcImp=false;
 function pcImpPick(){_pcImp=true;impPick();setTimeout(()=>{window.addEventListener('focus',()=>setTimeout(()=>{_pcImp=false;},4000),{once:true});},0);}
 (()=>{const b=impFile;impFile=async function(f){const n0=(S.imports||[]).length,tag=_pcImp;await b(f);_pcImp=false;if(tag&&(S.imports||[]).length>n0){const m=S.imports[S.imports.length-1];m.par=true;save();toast('أضيفت إلى «وثائق للآباء»: '+m.name);}};})();
 function pcImpTog(id,on){const m=(S.imports||[]).find(x=>x.id===id);if(!m)return;m.par=!!on;save();go('parents');}
-function pcImpTiles(){const L=(S.imports||[]).filter(m=>m.par);return L.length?`<div class="dctiles">${L.map(m=>`<div class="dctile" onclick="dcT='imp:${m.id}';go('docs')"><b>${esc(m.name)}</b><span>وثيقة جاهزة ${m.type==='pdf'?'PDF'+(m.pages?` · ${m.pages} ص`:''):'Word قابلة للتعديل'}</span><i>مضافة</i></div>`).join('')}</div>`:'<p class="muted" style="margin:0">لا توجد وثائق جاهزة مضافة بعد.</p>';}
+function pcImpTiles(){const L=(S.imports||[]).filter(m=>m.par);return L.length?`<div class="dctiles">${L.map(m=>`<div class="dctile" onclick="dcT='imp:${m.id}';go(dcBack())"><b>${esc(m.name)}</b><span>وثيقة جاهزة ${m.type==='pdf'?'PDF'+(m.pages?` · ${m.pages} ص`:''):'Word قابلة للتعديل'}</span><i>مضافة</i></div>`).join('')}</div>`:'<p class="muted" style="margin:0">لا توجد وثائق جاهزة مضافة بعد.</p>';}
 (()=>{const b=pcDocsView;pcDocsView=function(){const h=b();const all=S.imports||[];
  const card=`<div class="card" style="border-color:var(--gold)"><div class="row" style="align-items:center;gap:8px"><h3 style="margin:0">وثائقي الجاهزة للآباء</h3><button class="btn" onclick="pcImpPick()">➕ إضافة وثيقة جاهزة (PDF / Word)</button></div>
  <p class="muted" style="margin:8px 0">أضف نماذجك الخاصة (مراسلات المؤسسة أو المديرية، استمارات، إشعارات…). وثيقة Word تُفتح قابلة للتعديل والتعبئة مع أدوات الخط، ووثيقة PDF تُعرض وتُطبع كما هي. كل وثيقة تُطبع أو تُصدَّر PDF أو Word.</p>${pcImpTiles()}
@@ -3171,7 +3175,7 @@ function slHdr(){const t=SL();if(!t.hdrV2){t.hdr='school';t.hdrV2=1;}return t.hd
  h=h.replace(/(<div class="slip"[^>]*>)/,'$1'+top);return slOneLine(h);};})();
 /* العنوان والموسم الدراسي في سطر واحد */
 function slOneLine(h){const ann=esc(S.school.annee||'');return h.replace(/<div>المؤسسة: [^<]*— الموسم: [^<]*<\/div>/,'').replace(/(<h4 style="font-size:1\.15em">)([^<]*)(<\/h4>)/,(m,a,t,c)=>`<h4 style="font-size:1.15em;display:flex;justify-content:space-between;align-items:baseline;gap:6px;flex-wrap:nowrap"><span>${t.trim()}</span><span style="font-size:.72em;font-weight:normal;white-space:nowrap">الموسم الدراسي: ${ann}</span>${c}`);}
-function slSetHdr(v){SL().hdr=v;save();go('docs');}
+function slSetHdr(v){SL().hdr=v;save();go(dcBack());}
 (()=>{const b=V.docs;V.docs=(...a)=>{let h=b(...a);if(dcT!=='slips')return h;const m=slHdr();
  const sel=`<div class="fld"><label>ترويسة القسيمة</label><select onchange="slSetHdr(this.value)">${[['school','اسم المؤسسة فقط'],['full','المؤسسة + الأكاديمية والمديرية'],['none','بدون ترويسة (سطر المؤسسة فقط)']].map(([v,l])=>`<option value="${v}" ${m===v?'selected':''}>${l}</option>`).join('')}</select></div>`;
  const k='<h3>قسائم ورقة السماح بالدخول</h3><div class="row" style="align-items:flex-end;gap:8px">';const i=h.indexOf(k);
@@ -4401,7 +4405,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </script>
 
 <script>/* PWA: تحديث متحكَّم فيه — إشعار بالتحديث وتطبيقه بإذن المستعمل، وطلب تخزين دائم للمعطيات */
-const APP_VERSION='1.15.5';let MKB_REG=null;
+const APP_VERSION='1.16.0';let MKB_REG=null;
 async function mkbUpdNotes(){try{return await (await fetch('./version.json?t='+Date.now(),{cache:'no-store'})).json();}catch(e){return null;}}
 async function mkbUpdShow(w){if(!w)return;const v=await mkbUpdNotes()||{};
  if(v.version&&v.version===APP_VERSION){w.postMessage('skip');return;}
@@ -4426,6 +4430,185 @@ if('serviceWorker' in navigator&&window.isSecureContext&&/^https?:$/.test(locati
  let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rl)return;rl=true;location.reload();});
  setInterval(()=>reg.update().catch(()=>{}),3*3600e3);}catch(e){}});}
 if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(()=>{});}
+/* ================= التوثيق الإداري: تبويب مستقل (بحث + 5 تبويبات فرعية + نماذج + استيراد + سجل المذكرات) ================= */
+const TW_TABS=[['board','📋 السبورة المرجعية'],['admin','🗂 الوثائق الإدارية'],['prof','👩‍🏫 وثائق الأساتذة'],['stu','🎒 وثائق التلاميذ'],['mdh','📜 المذكرات الوزارية']];
+const TW_TN=Object.fromEntries(TW_TABS.map(x=>[x[0],x[1].replace(/^\S+\s/,'')]));
+const TW_SVC='الإدارة التربوية';
+let twTab='board',twQ='',twGen='',twMd='',twMdQ='';
+/* ---- الملء الآلي: رموز تُعوَّض بمعطيات التطبيق ---- */
+function twEff(c){const L=classStudents(c);const b=L.filter(s=>/ذكر|^m/i.test(s.sexe||'')).length;return{n:L.length,b,g:L.length-b};}
+function twTok(t){const s=S.school,cl=S.classes||[],st=S.students||[];
+ switch(t){case '@etab':return s.etab||'';case '@dir':return s.direction||'';case '@acad':return s.academie||'';case '@annee':return s.annee||'';case '@haris':return s.haris||'';case '@mudir':return s.mudir||'';case '@commune':return s.commune||'';
+  case '@nbcls':return cl.length?String(cl.length):'';case '@nbstu':return st.length?String(st.length):'';case '@classes':return cl.map(c=>c.code).join('، ');
+  case '@staff':return [s.mudir?s.mudir+' | مدير(ة) المؤسسة | | الإدارة التربوية | ':'',s.haris?s.haris+' | حارس(ة) عام(ة) / متصرف(ة) تربوي(ة) | | الحراسة العامة | ':''].filter(Boolean).join('\n');
+  case '@harisCls':return cl.map(c=>{const e=twEff(c.code);return c.code+' | '+(c.niveau||'')+' | '+e.n;}).join('\n');}
+ return '';}
+/* ---- نماذج التوثيق (تُضاف إلى محرك الوثائق دون أن تظهر في «وثائق الاستعمال اليومي») ---- */
+const TW_R={rh:'الظهير الشريف رقم 1.58.008 بشأن النظام الأساسي العام للوظيفة العمومية، كما وقع تغييره وتتميمه',sp:'المرسوم رقم 2.24.140 في شأن النظام الأساسي الخاص بموظفي قطاع التربية الوطنية',org:R_376,law:R_5117,pd:R_0908};
+const TWP=(t,d,f,sg,r,extra)=>Object.assign({t,d,f,sg,r,tip:[],tw:1,svc:TW_SVC},extra||{});
+Object.assign(DC,{
+ tw_fiche:TWP('ورقة تعريفية بالمؤسسة','الهوية والمعطيات الأساسية للمؤسسة',[['date','التاريخ','date'],['etb','اسم المؤسسة','text','@etab'],['code','رمز المؤسسة','text'],['cyc','السلك','sel',['التعليم الابتدائي','التعليم الثانوي الإعدادي','التعليم الثانوي التأهيلي']],['com','الجماعة','text','@commune'],['mil','الوسط','sel',['حضري','شبه حضري','قروي']],['adr','العنوان','text'],['tel','الهاتف','text'],['mail','البريد الإلكتروني','text'],['crea','تاريخ الإحداث','text'],['mud','اسم المدير(ة)','text','@mudir'],['har','الحارس(ة) العام(ة)','text','@haris'],['ncl','عدد الأقسام','text','@nbcls'],['nst','عدد التلاميذ','text','@nbstu'],['nrooms','عدد الحجرات','text'],['ann','مرافق أخرى (داخلية، مطعم، قاعة متعددة الوسائط، ملعب...)','area']],['مدير(ة) المؤسسة'],[TW_R.org],{k:'بطاقة هوية المؤسسة رمز العنوان الهاتف'}),
+ tw_staff:TWP('لائحة الطاقم الإداري والتربوي','أطر الإدارة التربوية والتدريس والدعم بالمؤسسة',[['date','التاريخ','date'],['lst','الطاقم','tbl',['الاسم الكامل','الإطار','رقم التأجير','المهمة / المادة','الهاتف'],18,'@staff']],['مدير(ة) المؤسسة'],[TW_R.org,TW_R.sp],{k:'الموظفين الأساتذة الأطر لائحة اسمية'}),
+ tw_insp:TWP('لائحة هيئة المراقبة التربوية','السادة المفتشون المؤطرون للمؤسسة حسب المواد',[['date','التاريخ','date'],['lst','المفتشون','tbl',['الاسم الكامل','الإطار','المادة / التخصص','الهاتف'],12]],['مدير(ة) المؤسسة'],[TW_R.org],{k:'المفتشين التأطير المراقبة'}),
+ tw_coun:TWP('لائحة أعضاء مجلس من مجالس المؤسسة','مجلس التدبير، المجلس التربوي، المجالس التعليمية، مجالس الأقسام',[['date','التاريخ','date'],['ty','المجلس','sel',['مجلس التدبير','المجلس التربوي','المجالس التعليمية','مجالس الأقسام']],['mat','المادة أو القسم (عند الاقتضاء)','text'],['lst','الأعضاء','tbl',['الاسم الكامل','الصفة داخل المجلس','الفئة الممثلة'],14]],['مدير(ة) المؤسسة'],[TW_R.org],{k:'مجلس التدبير المجلس التربوي مجالس الأقسام المجالس التعليمية أعضاء'}),
+ tw_apt:TWP('لائحة أعضاء مكتب جمعية الآباء','مكتب جمعية آباء وأمهات وأولياء التلاميذ',[['date','التاريخ','date'],['el','تاريخ تجديد المكتب','date'],['lst','أعضاء المكتب','tbl',['الاسم الكامل','المهمة داخل المكتب','الهاتف'],11]],['مدير(ة) المؤسسة'],[TW_R.law],{k:'جمعية آباء وأمهات وأولياء التلاميذ المكتب'}),
+ tw_ptt:TWP('جدول حصص الأساتذة (ملخص)','توزيع الأساتذة على المواد والأقسام والساعات',[['date','التاريخ','date'],['lst','التوزيع','tbl',['الأستاذ(ة)','المادة','الأقسام المسندة','عدد الساعات'],26]],['الحارس(ة) العام(ة)','مدير(ة) المؤسسة'],[TW_R.org],{k:'جداول الحصص توزيع الأساتذة استعمال الزمن'}),
+ tw_rooms:TWP('جدول استعمال القاعات','توزيع الحجرات والقاعات على أيام الأسبوع',[['date','التاريخ','date'],['lst','القاعات','tbl',['القاعة','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],16]],['الحارس(ة) العام(ة)','مدير(ة) المؤسسة'],[TW_R.org],{k:'القاعات الحجرات استعمال',land:1}),
+ tw_func:TWP('النظام الوظيفي','مواقيت العمل وتوزيع المهام على أطر الإدارة والدعم',[['date','التاريخ','date'],['lst','التوزيع','tbl',['الإطار / الموظف(ة)','المهام المسندة','أوقات العمل'],14],['obs','ملاحظات','area']],['مدير(ة) المؤسسة'],[TW_R.org,TW_R.sp],{k:'المهام أوقات العمل توزيع المهام مكتب الغياب'}),
+ tw_absb:TWP('جدول حصص موظفي مكتب الغياب','تغطية مكتب الغياب طيلة أيام الأسبوع',[['date','التاريخ','date'],['lst','التوزيع','tbl',['الموظف(ة)','الأيام','الفترة','المهام'],10]],['الحارس(ة) العام(ة)','مدير(ة) المؤسسة'],[TW_R.org],{k:'مكتب الغياب الحراسة'}),
+ tw_letter:TWP('مراسلة إدارية','رسالة رسمية من المؤسسة إلى جهة إدارية',[['date','التاريخ','date'],['from','من','text','@mudir'],['to','إلى','text','السيد(ة) المدير(ة) الإقليمي(ة)'],['obj','الموضوع','text'],['ref','المرجع','text'],['att','المرفقات','text'],['body','نص المراسلة','area']],['مدير(ة) المؤسسة'],[TW_R.org],{in:'سلام تام بوجود مولانا الإمام المؤيد بالله، وبعد،',k:'رسالة مراسلة الموضوع المرجع'}),
+ tw_bord:TWP('جدول إرسال','إرسال وثائق مع بيان عددها',[['date','التاريخ','date'],['to','المرسل إليه','text','السيد(ة) المدير(ة) الإقليمي(ة)'],['obj','الموضوع','text'],['lst','الوثائق المرسلة','tbl',['ر.ت','بيان الوثائق','العدد','ملاحظات'],8]],['مدير(ة) المؤسسة'],[TW_R.org],{k:'bordereau ارسال وثائق'}),
+ tw_in:TWP('سجل الواردات','تسجيل المراسلات والمذكرات الواردة على المؤسسة',[['date','التاريخ','date'],['lst','الواردات','tbl',['ر.ت','تاريخ الوصول','المصدر','المرجع وتاريخه','الموضوع','الإحالة على'],22]],['مدير(ة) المؤسسة'],[TW_R.org],{k:'الواردات البريد المذكرات الواردة',land:1}),
+ tw_out:TWP('سجل الصادرات','تسجيل المراسلات الصادرة عن المؤسسة',[['date','التاريخ','date'],['lst','الصادرات','tbl',['ر.ت','تاريخ الإرسال','المرسل إليه','الموضوع','المرفقات'],22]],['مدير(ة) المؤسسة'],[TW_R.org],{k:'الصادرات البريد المراسلات',land:1}),
+ tw_hand:TWP('محضر تسليم المهام','تسليم مهام أو سجلات أو ممتلكات بين مسؤولين',[['date','التاريخ','date'],['time','الساعة','time'],['role','المهام المسلمة','sel',['إدارة المؤسسة','الحراسة العامة','التسيير المادي والمالي','أخرى']],['from','المسلِّم(ة)','text'],['to','المستلم(ة)','text'],['com','الحاضرون','tbl',['الاسم الكامل','الصفة','رقم التأجير'],4],['items','الوثائق والسجلات والممتلكات المسلمة','area'],['obs','ملاحظات وتحفظات','area']],['المسلِّم(ة)','المستلم(ة)','الحاضرون'],[TW_R.org],{k:'تسليم المهام محضر تسلم'}),
+ tw_rep:TWP('تقرير إخباري','إخبار الرئيس المباشر بواقعة أو وضعية',[['date','التاريخ','date'],['from','من','text','@haris'],['to','إلى','text','السيد(ة) مدير(ة) المؤسسة'],['obj','الموضوع','text'],['body','الوقائع','area'],['prop','الاقتراحات','area']],['محرر(ة) التقرير','اطلاع السيد(ة) المدير(ة)'],[TW_R.org],{in:'سلام تام بوجود مولانا الإمام المؤيد بالله، وبعد،',k:'تقرير اخباري'}),
+ tw_note:TWP('مذكرة داخلية / إعلان','إخبار الأطر أو التلاميذ بإجراء أو موعد',[['date','التاريخ','date'],['to','إلى','sel',['السيدات والسادة الأساتذة','السيدات والسادة أطر الإدارة والدعم','التلميذات والتلاميذ','آباء وأمهات وأولياء التلاميذ','جميع العاملين بالمؤسسة']],['obj','الموضوع','text'],['body','النص','area']],['مدير(ة) المؤسسة'],[TW_R.org],{k:'اعلان مذكرة داخلية اخبار'}),
+ tw_ack:TWP('إشعار بالتوصل','إشعار باستلام وثيقة أو مراسلة',[['date','التاريخ','date'],['who','اسم المستلم(ة)','text'],['doc','الوثيقة المستلمة','text'],['ref','مرجعها','text']],['المستلم(ة)'],[TW_R.org],{in:'أشهد أنا الموقع(ة) أسفله بأنني توصلت بالوثيقة المبينة أسفله.',k:'اشعار بالتوصل استلام'}),
+ tw_pvin:TWP('محضر الالتحاق','التحاق موظف(ة) بمقر عمله(ا) بالمؤسسة',[['date','تاريخ الالتحاق','date'],['nm','الاسم الكامل','text'],['cad','الإطار','text'],['gr','الدرجة','text'],['ppr','رقم التأجير','text'],['cin','رقم البطاقة الوطنية','text'],['mat','المادة / المهمة','text'],['orig','المؤسسة أو الجهة الأصلية','text'],['kind','سبب الالتحاق','sel',['تعيين جديد','انتقال','إعادة انتشار','تكليف','التحاق بعد التخرج','أخرى']],['ref','مرجع قرار التعيين أو التكليف','text']],['المعني(ة) بالأمر','مدير(ة) المؤسسة'],[TW_R.rh,TW_R.sp],{in:'يشهد مدير(ة) المؤسسة أن الموظف(ة) المبينة هويته(ا) أسفله قد التحق(ت) بمقر عمله(ا) بهذه المؤسسة في التاريخ المذكور.',k:'التحاق محضر الدخول تعيين'}),
+ tw_pvcol:TWP('محضر الدخول أو الخروج الجماعي','توقيع الأطر عند الدخول المدرسي أو نهاية السنة',[['date','التاريخ','date'],['ty','نوع المحضر','sel',['محضر الدخول المدرسي','محضر الخروج (نهاية السنة الدراسية)']],['lst','الأطر','tbl',['الاسم الكامل','الإطار','رقم التأجير','المادة / المهمة','التوقيع'],26]],['مدير(ة) المؤسسة'],[TW_R.rh,TW_R.org],{k:'محضر الدخول محضر الخروج توقيع الاساتذة',land:1}),
+ tw_rep2:TWP('محضر استئناف العمل','استئناف موظف(ة) لعمله(ا) بعد غياب أو رخصة',[['date','تاريخ الاستئناف','date'],['nm','الاسم الكامل','text'],['cad','الإطار','text'],['gr','الدرجة','text'],['ppr','رقم التأجير','text'],['cin','رقم البطاقة الوطنية','text'],['why','استئناف العمل بعد','chk',['رخصة مرض قصيرة الأمد','رخصة مرض متوسطة الأمد','رخصة مرض طويلة الأمد','رخصة الولادة','رخصة استثنائية','تدريب دراسي','الاستيداع','الإلحاق','انتهاء تكليف بمهمة','تغيب أو انقطاع عن العمل']],['from','مدة الغياب: من','date'],['tod','إلى','date']],['المعني(ة) بالأمر','مدير(ة) المؤسسة'],[TW_R.rh,TW_R.sp],{in:'يشهد مدير(ة) المؤسسة أن الموظف(ة) المبينة هويته(ا) أسفله قد استأنف(ت) عمله(ا) بهذه المؤسسة في التاريخ المذكور.',k:'استئناف العمل رخصة مرض ولادة'}),
+ tw_att:TWP('شهادة العمل','شهادة تُسلَّم للموظف(ة) بطلب منه(ا)',[['date','التاريخ','date'],['nm','الاسم الكامل','text'],['cad','الإطار','text'],['gr','الدرجة','text'],['ppr','رقم التأجير','text'],['cin','رقم البطاقة الوطنية','text'],['fn','المهمة / المادة','text'],['since','يعمل بالمؤسسة منذ','date']],['مدير(ة) المؤسسة'],[TW_R.rh],{in:'يشهد مدير(ة) المؤسسة أن الموظف(ة) المبينة هويته(ا) أسفله يعمل بهذه المؤسسة إلى حدود تاريخه، وسُلّمت له(ا) هذه الشهادة بطلب منه(ا) للإدلاء بها عند الحاجة.',k:'شهادة العمل شهادة ادارية'}),
+ tw_leave:TWP('طلب رخصة التغيب','طلب رخصة استثنائية أو إذن بالتغيب',[['date','تاريخ الطلب','date'],['nm','الاسم الكامل','text'],['cad','الإطار','text'],['ppr','رقم التأجير','text'],['ty','نوع الرخصة','sel',['رخصة استثنائية','إذن بالتغيب لساعات','رخصة لأسباب عائلية','أخرى']],['from','من','date'],['tod','إلى','date'],['nd','عدد الأيام أو الساعات','text'],['why','الأسباب','area'],['org','كيفية تنظيم التلاميذ أثناء الغياب','area']],['المعني(ة) بالأمر','رأي مدير(ة) المؤسسة'],[TW_R.rh],{k:'رخصة استثنائية تغيب اذن'}),
+ tw_pfiche:TWP('الورقة الشخصية للأستاذ(ة)','المعطيات الإدارية والمهنية للأستاذ(ة)',[['date','التاريخ','date'],['nm','الاسم الكامل','text'],['nmf','الاسم بالحروف اللاتينية','text'],['ppr','رقم التأجير','text'],['cin','رقم البطاقة الوطنية','text'],['bd','تاريخ الازدياد','date'],['cad','الإطار','text'],['gr','الدرجة','text'],['ech','الرتبة','text'],['rec','تاريخ التوظيف','date'],['tit','تاريخ الترسيم','date'],['arr','تاريخ الالتحاق بالمؤسسة','date'],['dip','الشهادات المحصل عليها','text'],['mat','المادة المدرَّسة','text'],['cls','الأقسام المسندة','text'],['hrs','عدد الساعات الأسبوعية','text'],['ins','آخر تفتيش: التاريخ والنقطة','text'],['tel','الهاتف','text']],['المعني(ة) بالأمر','مدير(ة) المؤسسة'],[TW_R.sp,TW_R.pd],{k:'الورقة الشخصية بطاقة الاستاذ fiche personnelle'}),
+ tw_ask:TWP('استفسار','استفسار موظف(ة) عن واقعة مع خانة الجواب',[['date','التاريخ','date'],['to','إلى السيد(ة)','text'],['fn','الإطار / المهمة','text'],['obj','الموضوع','text'],['facts','الواقعة موضوع الاستفسار','area'],['dl','أجل الجواب','text','48 ساعة من تاريخ التوصل'],['ans','جواب المعني(ة) بالأمر','area']],['مدير(ة) المؤسسة','المعني(ة) بالأمر (الجواب والتوقيع)'],[TW_R.rh],{in:'يُطلب منكم موافاتنا بجواب كتابي عن الواقعة المبينة أسفله داخل الأجل المحدد.',k:'استفسار جواب انذار'}),
+ tw_dep:TWP('شهادة المغادرة','تُسلَّم للتلميذ(ة) المنتقل(ة) إلى مؤسسة أخرى',[['date','التاريخ','date'],['stu','','stu'],['bd','تاريخ ومكان الازدياد','text'],['lvl','المستوى الدراسي','text'],['out','تاريخ المغادرة','date'],['dest','المؤسسة المستقبلة','text'],['why','سبب المغادرة','sel',['انتقال الأسرة','تغيير مقر السكن','طلب الولي','توجيه','أخرى']]],['مدير(ة) المؤسسة'],[TW_R.law,TW_R.org],{in:'يشهد مدير(ة) المؤسسة أن التلميذ(ة) المبينة هويته(ا) أسفله كان(ت) يتابع(تتابع) دراسته(ا) بهذه المؤسسة، وغادرها في التاريخ المذكور.',k:'شهادة المغادرة انتقال تلميذ'}),
+ tw_reqd:TWP('طلب ملفات مدرسية','طلب ملفات التلاميذ الوافدين من مؤسساتهم الأصلية',[['date','التاريخ','date'],['to','إلى السيد(ة) مدير(ة)','text'],['lst','التلاميذ المعنيون','tbl',['ر.ت','اسم التلميذ(ة)','رقم مسار','المستوى'],10]],['مدير(ة) المؤسسة'],[TW_R.org],{in:'سلام تام بوجود مولانا الإمام المؤيد بالله، وبعد، يشرفني أن أطلب منكم موافاتنا بالملفات المدرسية للتلاميذ المبينة أسماؤهم أسفله، الذين التحقوا بمؤسستنا.',k:'طلب الملف المدرسي وافد'}),
+ tw_sendd:TWP('إرسال ملفات مدرسية','إرسال ملفات التلاميذ المغادرين إلى المؤسسات المستقبلة',[['date','التاريخ','date'],['to','إلى السيد(ة) مدير(ة)','text'],['lst','الملفات المرسلة','tbl',['ر.ت','اسم التلميذ(ة)','رقم مسار','المستوى','ملاحظات'],10]],['مدير(ة) المؤسسة'],[TW_R.org],{in:'سلام تام بوجود مولانا الإمام المؤيد بالله، وبعد، يشرفني أن أبعث إليكم بالملفات المدرسية للتلاميذ المبينة أسماؤهم أسفله.',k:'ارسال الملف المدرسي مغادر'}),
+ tw_sfiche:TWP('بطاقة التلميذ(ة)','المعطيات الأساسية للتلميذ(ة) وولي أمره',[['date','التاريخ','date'],['stu','','stu'],['bd','تاريخ ومكان الازدياد','text'],['par','اسم ولي(ة) الأمر','text'],['rel','صفته','sel',['الأب','الأم','الولي(ة) القانوني(ة)']],['tel','الهاتف','text'],['adr','العنوان','text'],['prev','المؤسسة السابقة','text'],['obs','ملاحظات تهم سلامة التلميذ(ة) (بموافقة الولي)','area']],['ولي(ة) الأمر','الحارس(ة) العام(ة)'],[TW_R.law,TW_R.pd],{k:'بطاقة التلميذ fiche معلومات الولي'}),
+ tw_ori:TWP('طلب التوجيه أو إعادة التوجيه','طلب يقدمه التلميذ(ة) وولي أمره',[['date','التاريخ','date'],['stu','','stu'],['ty','نوع الطلب','sel',['طلب التوجيه','طلب إعادة التوجيه']],['ch1','الاختيار الأول','text'],['ch2','الاختيار الثاني','text'],['why','مبررات الطلب','area']],['التلميذ(ة)','ولي(ة) الأمر','مدير(ة) المؤسسة'],[TW_R.law],{k:'التوجيه اعادة التوجيه الشعبة'})
+});
+Object.keys(DC).filter(k=>k.startsWith('tw_')).forEach(k=>{DC[k].k=DC[k].k||'';});
+/* ---- الفهرس: نماذج جديدة + نماذج من «وثائق الاستعمال اليومي» + وثائق تُولَّد آليا + روابط ---- */
+const TW_ITEMS=[
+ ...['tw_fiche','tw_staff','tw_insp','tw_coun','tw_apt','tw_ptt','tw_rooms','tw_func','tw_absb'].map(k=>({tab:'board',ty:'dc',k})),
+ {tab:'board',ty:'gen',k:'bunya',t:'البنية التربوية',d:'المستويات والأقسام والتلاميذ (ذكور/إناث) — تُملأ آليا',kw:'البنية التربوية المستويات عدد الاقسام'},
+ {tab:'board',ty:'gen',k:'tanzim',t:'التنظيم التربوي',d:'الأقسام وأعدادها حسب المستوى — يُملأ آليا',kw:'التنظيم التربوي الاقسام الاعداد'},
+ {tab:'board',ty:'gen',k:'haris',t:'جدول الأقسام المسندة للحارس(ة) العام(ة)',d:'الأقسام وأعدادها — يُملأ آليا',kw:'الاقسام المسندة الحارس العام'},
+ {tab:'board',ty:'gen',k:'ttg',t:'استعمال الزمن العام',d:'عدد الحصص اليومية لكل قسم من جداول الحصص — يُملأ آليا',kw:'استعمال الزمن العام جدول الحصص'},
+ {tab:'board',ty:'gen',k:'stats',t:'إحصاءات عامة',d:'التلاميذ، الوافدون والمغادرون، الغياب المسجل خلال الشهر — تُملأ آليا',kw:'احصاءات مؤشرات مبيانات الغياب'},
+ {tab:'board',ty:'view',k:'calendar',t:'المقرر الوزاري لتنظيم السنة الدراسية',d:'العطل والدورات والفروض (تبويب «اليومية السنوية»)',kw:'المقرر الوزاري العطل الدورات السنة الدراسية'},
+ {tab:'board',ty:'view',k:'legalref',t:'النصوص المرجعية والنظام الداخلي',d:'تبويب «المرجعيات القانونية»',kw:'النصوص المرجعية النظام الداخلي القانون'},
+ ...['tw_letter','tw_bord','tw_in','tw_out','tw_hand','tw_rep','tw_note','tw_ack'].map(k=>({tab:'admin',ty:'dc',k})),
+ {tab:'admin',ty:'dc',k:'meet'},{tab:'admin',ty:'view',k:'monthly',t:'إحصاء غياب المؤسسة (المواظبة الشهرية)',d:'تبويب «إحصاء غياب المؤسسة»',kw:'المواظبة الشهرية احصاء الغياب'},{tab:'admin',ty:'view',k:'files',t:'طلب وإرسال الملفات',d:'تبويب «طلب وإرسال الملفات»',kw:'الملفات المدرسية طلب ارسال'},
+ ...['tw_pvin','tw_pvcol','tw_rep2','tw_att','tw_leave','tw_pfiche','tw_ask'].map(k=>({tab:'prof',ty:'dc',k})),{tab:'prof',ty:'dc',k:'stf'},
+ ...['tw_dep','tw_reqd','tw_sendd','tw_sfiche','tw_ori'].map(k=>({tab:'stu',ty:'dc',k})),
+ ...['sco','conv','engag','exit','accid','drop','suivi'].map(k=>({tab:'stu',ty:'dc',k}))
+].filter(x=>x.ty!=='dc'||DC[x.k]);
+function twIt(x){return x.ty==='dc'?{t:DC[x.k].t,d:DC[x.k].d,kw:(DC[x.k].k||'')}:x;}
+/* ---- البحث بالكلمات المفتاحية (يتسامح مع الهمزات والتاء المربوطة والحركات) ---- */
+function twN(s){return String(s||'').replace(/[ً-ْـ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').toLowerCase();}
+function twMatch(txt,q){const T=twN(txt),W=twN(q).split(/\s+/).filter(w=>w.length>1);return W.length&&W.every(w=>T.includes(w.replace(/^ال/,'')));}
+function twResults(q){const R=[];
+ TW_ITEMS.forEach(x=>{const i=twIt(x);if(twMatch(i.t+' '+i.d+' '+i.kw+' '+TW_TN[x.tab],q))R.push({tab:x.tab,t:i.t,d:i.d,go:twOpenJs(x)});});
+ (S.imports||[]).filter(m=>m.tw).forEach(m=>{if(twMatch(m.name+' '+(m.kw||'')+' '+TW_TN[m.tw]+' مستوردة',q))R.push({tab:m.tw,t:m.name,d:(m.type==='pdf'?'PDF':'Word')+' — وثيقة مستوردة',go:`twTab='${m.tw}';dcT='imp:${m.id}';twGen='';go('tawthiq')`});});
+ twMdAll().forEach(m=>{if(twMatch([m.no,m.dt,m.obj,m.sum,m.dom,m.kw].join(' ')+' مذكرة',q))R.push({tab:'mdh',t:(m.no?'رقم '+m.no+' — ':'')+m.obj,d:(m.dt?fmtD(m.dt)+' · ':'')+(m.dom||''),go:`twTab='mdh';twMd='${m.id}';dcT='';go('tawthiq')`});});
+ return R;}
+function twOpenJs(x){return x.ty==='dc'?`twTab='${x.tab}';dcT='${x.k}';dcEd=null;twGen='';go('tawthiq')`:x.ty==='gen'?`twTab='${x.tab}';twGen='${x.k}';dcT='';go('tawthiq')`:`go('${x.k}')`;}
+function twSearch(v){twQ=v;const box=$('#twRes');if(!box)return;const q=v.trim();if(q.length<2){box.innerHTML='';return;}
+ const R=twResults(q);box.innerHTML=`<div class="twres">${R.length?`<div class="muted" style="margin-bottom:6px">${R.length} نتيجة لـ «${esc(q)}»</div>`+R.slice(0,40).map(r=>`<div class="twr" onclick="${r.go}"><span class="tag">${TW_TN[r.tab]}</span> <b>${esc(r.t)}</b><div class="muted">${esc(r.d||'')}</div></div>`).join(''):`<p class="muted">لا توجد نتيجة لـ «${esc(q)}». جرّب كلمة أخرى، أو استورد الوثيقة.</p>`}</div>`;}
+/* ---- الوثائق المولَّدة آليا من معطيات التطبيق ---- */
+function twHd(t,sub){return `${dcHead(null).replace('مصلحة الحراسة العامة',TW_SVC).replace(/رقم: \.+/,'')}<div class="dcti">${t}</div>${sub?`<p class="dcin" style="text-align:center">${sub}</p>`:''}`;}
+function twTbl(head,rows,foot){return `<table class="dctb twt"><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}${foot?`<tr class="twft">${foot.map(c=>`<td>${c}</td>`).join('')}</tr>`:''}</table>`;}
+function twSign(L){return `<div class="dcplace">حُرِّر بـ: <span class="dcdot" style="min-width:10em"></span> في: <span dir="ltr" style="unicode-bidi:isolate">${fmtD(dcToday())}</span></div><div class="dcsg">${L.map(x=>`<div>${x}<div class="dcsgl">الاسم والتوقيع</div></div>`).join('')}</div>`;}
+const TW_GEN={
+ bunya:()=>{const L=niveauList(),rows=L.map(n=>{const C=S.classes.filter(c=>c.niveau===n);let t=0,b=0;C.forEach(c=>{const e=twEff(c.code);t+=e.n;b+=e.b;});return[esc(n),C.length,b,t-b,t];});
+  const s=rows.reduce((a,r)=>[a[0]+r[1],a[1]+r[2],a[2]+r[3],a[3]+r[4]],[0,0,0,0]);
+  return twHd('البنية التربوية',`الموسم الدراسي: ${esc(S.school.annee||'')}`)+twTbl(['المستوى','عدد الأقسام','الذكور','الإناث','المجموع'],rows,['المجموع',...s])+twSign(['مدير(ة) المؤسسة']);},
+ tanzim:()=>{const rows=S.classes.map(c=>{const e=twEff(c.code);return[esc(c.code),esc(c.niveau||''),e.b,e.g,e.n];});const s=rows.reduce((a,r)=>[a[0]+r[2],a[1]+r[3],a[2]+r[4]],[0,0,0]);
+  return twHd('التنظيم التربوي',`الموسم الدراسي: ${esc(S.school.annee||'')}`)+twTbl(['القسم','المستوى','الذكور','الإناث','المجموع'],rows,['المجموع','',...s])+twSign(['الحارس(ة) العام(ة)','مدير(ة) المؤسسة']);},
+ haris:()=>{const rows=S.classes.map((c,i)=>[i+1,esc(c.code),esc(c.niveau||''),twEff(c.code).n]);
+  return twHd('جدول الأقسام المسندة للحارس(ة) العام(ة)',`الحارس(ة) العام(ة): ${esc(S.school.haris||'....................')}`)+twTbl(['ر.ت','القسم','المستوى','عدد التلاميذ'],rows,['','المجموع','',rows.reduce((a,r)=>a+r[3],0)])+twSign(['الحارس(ة) العام(ة)','مدير(ة) المؤسسة']);},
+ ttg:()=>{const D=['الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];const rows=S.classes.map(c=>{const t=S.timetable&&S.timetable[c.code];if(!t||t.length!==6)return[esc(c.code),...D.map(()=>'—'),'—'];const n=t.map(x=>(x||[]).length);return[esc(c.code),...n,n.reduce((a,b)=>a+b,0)];});
+  return twHd('استعمال الزمن العام','عدد الحصص المقررة لكل قسم في كل يوم (من جداول الحصص المستوردة)')+twTbl(['القسم',...D,'المجموع الأسبوعي'],rows)+'<p class="muted" style="font-size:10pt">«—»: لم يُستورد جدول حصص القسم بعد (تبويب «جداول الحصص»).</p>'+twSign(['الحارس(ة) العام(ة)','مدير(ة) المؤسسة']);},
+ stats:()=>{const st=S.students,b=st.filter(s=>/ذكر|^m/i.test(s.sexe||'')).length,ym=dcToday().slice(0,7);let ses=0;const who=new Set();
+  Object.keys(S.absLog||{}).filter(d=>d.slice(0,7)===ym).forEach(d=>Object.values(S.absLog[d]).forEach(L=>Object.entries(L.st||{}).forEach(([id,r])=>{const n=(r.a||[]).length;if(n){ses+=n;who.add(id);}})));
+  const rows=[['عدد الأقسام',S.classes.length],['عدد المستويات',niveauList().length],['مجموع التلاميذ',st.length],['الذكور',b],['الإناث',st.length-b],['التلاميذ الوافدون',(S.transfers&&S.transfers.in||[]).length],['التلاميذ المغادرون',(S.transfers&&S.transfers.out||[]).length],['حصص الغياب المسجلة خلال الشهر الجاري',ses],['عدد التلاميذ المتغيبين خلال الشهر الجاري',who.size]];
+  return twHd('إحصاءات عامة',`إلى غاية: ${fmtD(dcToday())}`)+twTbl(['المؤشر','القيمة'],rows)+twSign(['مدير(ة) المؤسسة']);}
+};
+const TW_GEN_LAND={};
+function twGenPage(k){return `<div class="pg fit dcpg${TW_GEN_LAND[k]?' land':''}"><div class="fitin">${TW_GEN[k]()}</div></div>`;}
+function twGenPrint(k){doPrint(twGenPage(k),TW_GEN_LAND[k]?'landscape':'portrait');}
+/* ---- سجل المذكرات الوزارية (أساسه السجل المعتمد في مهارة تدقيق المذكرات؛ الحالة ظاهرة لكل مذكرة) ---- */
+const TW_MD_BASE=[
+ {id:'b30',no:'30',dt:'2004-04-09',obj:'إحداث مجالس مؤسسات التربية والتعليم العمومي (تفعيل الباب الثاني من المرسوم 2.02.376)',dom:'مجالس',st:'تحتاج تحققا'},
+ {id:'b98',no:'98',dt:'2019-12-30',obj:'تفعيل اختصاصات مجالس التدبير',dom:'مجالس',st:'تحتاج تحققا'},
+ {id:'b867',no:'14/867',dt:'2014-10-17',obj:'القرارات التأديبية الصادرة عن مجالس الأقسام (العقوبات البديلة)',dom:'تأديب وانضباط',st:'تحتاج تحققا'},
+ {id:'b780',no:'780',dt:'2000-06-27',obj:'قرارات مجالس آخر السنة الدراسية',dom:'مجالس',st:'تحتاج تحققا'},
+ {id:'b87',no:'87',dt:'2004-07-10',obj:'تفعيل أدوار الحياة المدرسية',dom:'حياة مدرسية',st:'تحتاج تحققا'},
+ {id:'b159',no:'159/14',dt:'2014-11-25',obj:'أجرأة الاستراتيجية الوطنية لمشروع المؤسسة',dom:'مشروع المؤسسة',st:'تحتاج تحققا'},
+ {id:'b087',no:'087/21',dt:'2021-10-06',obj:'تعميم العمل بمشروع المؤسسة المندمج',dom:'مشروع المؤسسة',st:'تحتاج تحققا'},
+ {id:'b014',no:'014/24',dt:'2024-02-07',obj:'الإطار المنهجي الجديد لمشروع المؤسسة المندمج',dom:'مشروع المؤسسة',st:'تحتاج تحققا'},
+ {id:'d376',no:'مرسوم 2.02.376',dt:'2002-07-17',obj:'النظام الأساسي الخاص بمؤسسات التربية والتعليم العمومي (الإدارة التربوية والمجالس)',dom:'هيكلة المؤسسة',st:'ساري كما وقع تغييره وتتميمه',src:'الجريدة الرسمية عدد 5024 بتاريخ 25 يوليوز 2002'}
+];
+const TW_MD_ST=['سارية','سنوية (الموسم الجاري)','تحتاج تحققا','معدَّلة','منسوخة'];
+function twMdAll(){S.mdh=S.mdh||{list:[],ov:{}};const ov=S.mdh.ov||{};return [...TW_MD_BASE.map(m=>Object.assign({},m,{base:1},ov[m.id]||{})),...S.mdh.list].sort((a,b)=>String(b.dt||'').localeCompare(String(a.dt||'')));}
+function twMdVerify(m){return 'https://www.google.com/search?q='+encodeURIComponent('site:men.gov.ma مذكرة '+(m.no||'')+' '+(m.obj||''));}
+function twMdForm(m){m=m||{};return `<div class="row" id="twMdF"><div class="fld" style="flex:1;min-width:140px"><label>رقم المذكرة</label><input data-m="no" value="${esc(m.no||'')}" dir="ltr"></div><div class="fld" style="flex:1;min-width:140px"><label>تاريخها</label><input type="date" data-m="dt" value="${esc(m.dt||'')}" dir="ltr"></div><div class="fld" style="flex:1;min-width:160px"><label>المجال</label><input data-m="dom" value="${esc(m.dom||'')}" list="twDoms"></div><div class="fld" style="flex:1;min-width:160px"><label>حالة السريان</label><select data-m="st">${TW_MD_ST.map(s=>`<option ${s===(m.st||'سارية')?'selected':''}>${s}</option>`).join('')}</select></div>
+ <div class="fld" style="flex-basis:100%"><label>الموضوع</label><input data-m="obj" value="${esc(m.obj||'')}"></div><div class="fld" style="flex-basis:100%"><label>ملخص (بصياغتك)</label><textarea data-m="sum" rows="3">${esc(m.sum||'')}</textarea></div>
+ <div class="fld" style="flex:2;min-width:220px"><label>الرابط (موقع الوزارة أو الأكاديمية)</label><input data-m="url" value="${esc(m.url||'')}" dir="ltr"></div><div class="fld" style="flex:1;min-width:180px"><label>كلمات مفتاحية</label><input data-m="kw" value="${esc(m.kw||'')}"></div></div>
+ <datalist id="twDoms">${['هيكلة المؤسسة','مجالس','مشروع المؤسسة','حياة مدرسية','تأديب وانضباط','دخول مدرسي','تنظيم السنة','توقيت','امتحانات','دعم','موارد بشرية','تدبير مالي','أخرى'].map(x=>`<option value="${x}">`).join('')}</datalist>`;}
+function twMdCollect(){const v={};document.querySelectorAll('#twMdF [data-m]').forEach(e=>v[e.dataset.m]=e.value.trim());return v;}
+function twMdSave(id){const v=twMdCollect();if(!v.obj){toast('أدخل موضوع المذكرة');return;}S.mdh=S.mdh||{list:[],ov:{}};
+ if(id&&TW_MD_BASE.some(m=>m.id===id)){S.mdh.ov[id]=Object.assign(S.mdh.ov[id]||{},v);}
+ else if(id){const m=S.mdh.list.find(x=>x.id===id);if(m)Object.assign(m,v);}
+ else{id='md'+Date.now().toString(36);S.mdh.list.push(Object.assign({id,att:[]},v));}
+ save();twMd=id;toast('حُفظت المذكرة');go('tawthiq');}
+function twMdDel(id){const m=S.mdh.list.find(x=>x.id===id);if(!m||!confirm('حذف المذكرة «'+m.obj+'» من السجل؟'))return;(m.att||[]).forEach(a=>{try{imDbDel(a.id);}catch(e){}});S.mdh.list=S.mdh.list.filter(x=>x.id!==id);save();twMd='';go('tawthiq');}
+function twMdAttPick(id){const i=document.createElement('input');i.type='file';i.accept='.pdf,.docx,.doc,image/*,application/pdf';i.onchange=async()=>{const f=i.files[0];if(!f)return;
+ const aid='mda'+Date.now().toString(36);try{await imDbPut(aid,{file:new Uint8Array(await f.arrayBuffer()),mime:f.type||'application/octet-stream',name:f.name});}catch(e){alert('تعذر حفظ الملف: '+(e.message||e));return;}
+ S.mdh=S.mdh||{list:[],ov:{}};const base=TW_MD_BASE.some(m=>m.id===id);const tgt=base?(S.mdh.ov[id]=S.mdh.ov[id]||{}):S.mdh.list.find(x=>x.id===id);tgt.att=(tgt.att||[]).concat([{id:aid,name:f.name,size:f.size,at:Date.now()}]);save();toast('أُرفقت النسخة: '+f.name);go('tawthiq');};i.click();}
+async function twMdAttOpen(aid){let d;try{d=await imDbGet(aid);}catch(e){d=null;}if(!d){alert('الملف غير موجود على هذا الجهاز (قد تكون بيانات المتصفح مُسحت). أرفقه من جديد.');return;}
+ const u=URL.createObjectURL(new Blob([d.file],{type:d.mime}));const a=document.createElement('a');a.href=u;a.target='_blank';if(!/pdf|image/.test(d.mime))a.download=d.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}
+async function twMdAttDel(id,aid){if(!confirm('حذف هذه النسخة المرفقة؟'))return;const base=TW_MD_BASE.some(m=>m.id===id);const tgt=base?S.mdh.ov[id]:S.mdh.list.find(x=>x.id===id);if(tgt)tgt.att=(tgt.att||[]).filter(a=>a.id!==aid);save();try{await imDbDel(aid);}catch(e){}go('tawthiq');}
+function twMdView(){const all=twMdAll(),q=twMdQ.trim();const L=q?all.filter(m=>twMatch([m.no,m.dt,m.obj,m.sum,m.dom,m.kw,m.st].join(' '),q)):all;
+ if(twMd==='new')return `<div class="card" style="border-color:var(--gold)"><h3>إضافة مذكرة إلى السجل</h3>${twMdForm()}<div class="row" style="margin-top:8px"><button class="btn" onclick="twMdSave('')">حفظ</button><button class="btn out" onclick="twMd='';go('tawthiq')">إلغاء</button></div></div>`;
+ const m=twMd?all.find(x=>x.id===twMd):null;
+ const det=m?`<div class="card" style="border-color:var(--gold)"><h3>${m.no?'المذكرة رقم '+esc(m.no):'مذكرة'} ${m.dt?'<span class="muted">بتاريخ '+fmtD(m.dt)+'</span>':''}</h3>
+  <p><span class="tag ${/تحقق|منسوخة/.test(m.st||'')?'warn':''}">${esc(m.st||'')}</span> ${m.dom?`<span class="tag">${esc(m.dom)}</span>`:''}</p>
+  ${/تحقق/.test(m.st||'')?`<div class="note">رقم هذه المذكرة وتاريخها مسجلان دون تأكيد من مصدر رسمي. تحقق منهما قبل الاستشهاد بها في وثيقة رسمية، ثم عدّل حالتها.</div>`:''}
+  ${twMdForm(m)}
+  <div class="row" style="margin-top:8px;gap:6px"><button class="btn" onclick="twMdSave('${m.id}')">حفظ التعديلات</button><a class="btn out" href="${esc(m.url||twMdVerify(m))}" target="_blank" rel="noopener">${m.url?'فتح الرابط':'🔎 التحقق في موقع الوزارة'}</a><button class="btn out" onclick="twMdAttPick('${m.id}')">📎 إرفاق نسخة (PDF / Word / صورة)</button>${m.base?'':`<button class="btn out sm" style="color:#B00020" onclick="twMdDel('${m.id}')">حذف</button>`}<button class="btn out sm" onclick="twMd='';go('tawthiq')">رجوع إلى السجل</button></div>
+  ${(m.att||[]).length?`<h4 style="margin:12px 0 4px">النسخ المرفقة (${m.att.length})</h4>${m.att.map(a=>`<div class="row" style="gap:6px;align-items:center"><button class="btn out sm" onclick="twMdAttOpen('${a.id}')">📄 ${esc(a.name)}</button><span class="muted">${Math.round((a.size||0)/1024)} ك.ب</span><button class="btn out sm" style="color:#B00020" onclick="twMdAttDel('${m.id}','${a.id}')">✕</button></div>`).join('')}`:'<p class="muted">لا توجد نسخة مرفقة بعد.</p>'}
+  ${m.src?`<p class="muted">المصدر: ${esc(m.src)}</p>`:''}</div>`:'';
+ return det+`<div class="card"><h3>سجل المذكرات الوزارية (${all.length})</h3><div class="row" style="gap:6px"><input placeholder="تصفية السجل: رقم، موضوع، مجال، سنة..." value="${esc(twMdQ)}" oninput="twMdQ=this.value;clearTimeout(window._twT);window._twT=setTimeout(()=>{go('tawthiq');const e=document.querySelector('#twMdQ');},350)" id="twMdQ" style="flex:1;min-width:200px"><button class="btn" onclick="twMd='new';go('tawthiq')">+ إضافة مذكرة</button></div>
+ <div class="tw"><table class="d"><tr><th>الرقم</th><th>التاريخ</th><th>الموضوع</th><th>المجال</th><th>الحالة</th><th>نسخ</th></tr>${L.map(x=>`<tr style="cursor:pointer" onclick="twMd='${x.id}';go('tawthiq')"><td dir="ltr">${esc(x.no||'')}</td><td dir="ltr">${x.dt?fmtD(x.dt):''}</td><td>${esc(x.obj||'')}</td><td>${esc(x.dom||'')}</td><td><span class="tag ${/تحقق|منسوخة/.test(x.st||'')?'warn':''}">${esc(x.st||'')}</span></td><td>${(x.att||[]).length||''}</td></tr>`).join('')}</table></div>
+ <p class="muted" style="margin-top:6px">المذكرات بحالة «تحتاج تحققا» منقولة من السجل المرجعي دون تأكيد رسمي بعد: افتحها واضغط «التحقق في موقع الوزارة»، ثم عدّل حالتها وأرفق نسختها. المذكرات السنوية سارية للموسم المعني فقط.</p></div>`;}
+/* ---- الواجهة ---- */
+function twIsMine(t){t=String(t||'');if(t.startsWith('imp:')){const m=(S.imports||[]).find(x=>x.id===t.slice(4));return !!(m&&m.tw);}return !!(DC[t]&&DC[t].tw);}
+function twEditor(){const s=V.docs(),i=s.indexOf('<div class="card" style="border-color:var(--gold)">');return i>=0?s.slice(i):'';}
+function twImp(){window._twImp=twTab;impPick();}
+function twTiles(){const L=TW_ITEMS.filter(x=>x.tab===twTab),I=(S.imports||[]).filter(m=>m.tw===twTab);
+ return `<div class="dctiles">${L.map(x=>{const i=twIt(x),n=x.ty==='dc'?S.docs.filter(r=>r.t===x.k).length:0,on=(x.ty==='dc'&&dcT===x.k)||(x.ty==='gen'&&twGen===x.k);
+  return `<div class="dctile ${on?'on':''}" onclick="${twOpenJs(x)}"><b>${esc(i.t)}</b><span>${esc(i.d||'')}</span><i>${x.ty==='gen'?'⚙ يُملأ آليا':x.ty==='view'?'↗ تبويب آخر':n?n+' محفوظ':'نموذج قابل للتعبئة'}</i></div>`;}).join('')}
+  ${I.map(m=>`<div class="dctile ${dcT==='imp:'+m.id?'on':''}" onclick="dcT='imp:${m.id}';twGen='';go('tawthiq')"><b>${esc(m.name)}</b><span>${m.type==='pdf'?`PDF — ${m.pages||''} صفحة`:'Word قابل للتعبئة'}</span><i>مستوردة · ${fmtD(new Date(m.at).toISOString().slice(0,10))}</i></div>`).join('')}
+  <div class="dctile imadd" onclick="twImp()"><b>+ استيراد وثيقة جاهزة</b><span>PDF أو Word (docx)</span><i>تُضاف إلى «${TW_TN[twTab]}»</i></div></div>`;}
+V.tawthiq=()=>{if(!S.docs)S.docs=[];S.imports=S.imports||[];
+ if(dcT&&!twIsMine(dcT)&&!TW_ITEMS.some(x=>x.ty==='dc'&&x.k===dcT))dcT='';
+ const head=title('التوثيق الإداري','نماذج رسمية تُملأ آليا من معطيات التطبيق وتُصدَّر PDF وWord أو تُطبع مباشرة، مع وثائقك المستوردة وسجل المذكرات الوزارية.')+
+ `<div class="card twsearch"><input id="twQ" type="search" placeholder="🔎 ابحث بكلمات مفتاحية: محضر، شهادة، مجلس التدبير، مذكرة 87، استئناف العمل..." value="${esc(twQ)}" oninput="twSearch(this.value)"><div id="twRes"></div></div>
+ <div class="twtabs">${TW_TABS.map(([k,n])=>`<button class="${twTab===k?'on':''}" onclick="twTab='${k}';dcT='';dcEd=null;twGen='';twMd='';go('tawthiq')">${n}</button>`).join('')}</div>`;
+ if(twTab==='mdh')return head+twMdView();
+ let body='';
+ if(twGen&&TW_GEN[twGen]){const it=TW_ITEMS.find(x=>x.k===twGen);body=`<div class="card" style="border-color:var(--gold)"><h3>${it.t} <span class="tag">يُملأ آليا</span></h3><p class="muted">تُستخرج المعطيات من لوائح مسار المحمّلة${twGen==='ttg'?' ومن جداول الحصص':''}، والترويسة من الإعدادات. أعد الطباعة كلما تغيرت المعطيات.</p>
+  <div class="row" style="gap:6px"><button class="btn" onclick="twGenPrint('${twGen}')">🖨 طباعة / PDF / Word</button><button class="btn out" onclick="twGen='';go('tawthiq')">رجوع</button></div></div>
+  <div class="card"><div class="dcprev" id="twPv">${S.classes.length?twGenPage(twGen):'<p class="muted">حمّل لوائح مسار أولا (تبويب «تحميل لوائح مسار»).</p>'}</div></div>`;}
+ else if(dcT)body=twEditor();
+ return head+twTiles()+body+(dcT||twGen?'':`<div class="card"><p class="muted" style="margin:0">${{board:'وثائق السبورة المرجعية: بطاقة المؤسسة، البنية والتنظيم التربويان، جداول الحصص والقاعات، اللوائح (الطاقم، المفتشون، المجالس، جمعية الآباء)، الإحصاءات، والنصوص المرجعية.',admin:'المراسلات والسجلات والمحاضر والتقارير الإدارية.',prof:'وثائق الوضعية الإدارية للأساتذة والأطر: الالتحاق، الدخول والخروج، استئناف العمل، الشهادات، الرخص، الاستفسار.',stu:'وثائق التلاميذ: الشهادات، الملفات المدرسية، البطاقات، التوجيه، وما يرتبط بالحياة المدرسية.'}[twTab]} اضغط على نموذج لتعبئته، أو «طباعة نموذج فارغ» للملء اليدوي.</p></div>`);};
+AFTER.tawthiq=()=>{if(AFTER.docs&&(dcT))AFTER.docs();const pv=$('#twPv .pg');if(pv){const box=pv.parentElement,W=pv.offsetWidth||1,sc=Math.min(1,(box.clientWidth-4)/W);pv.style.transformOrigin='top right';pv.style.transform=`scale(${sc})`;box.style.height=(pv.offsetHeight*sc+8)+'px';box.style.overflow='hidden';}
+ if(twQ&&$('#twQ'))twSearch(twQ);const mq=$('#twMdQ');if(mq&&document.activeElement!==mq&&twMdQ){mq.focus();mq.setSelectionRange(mq.value.length,mq.value.length);}};
+/* القائمة الجانبية: تبويب مستقل قبل «مرجعيات» */
+(()=>{const i=MODS.findIndex(m=>m[0]==='g'&&m[1]==='مرجعيات');const add=[['g','التوثيق الإداري'],['tawthiq','التوثيق الإداري']];if(i>=0)MODS.splice(i,0,...add);else MODS.push(...add);})();
+/* «وثائق الاستعمال اليومي» تبقى كما هي: لا تظهر فيها نماذج هذا التبويب ولا وثائقه المستوردة */
+(()=>{const b=V.docs;V.docs=()=>{if(cur==='docs'&&twIsMine(dcT))dcT='';return b();};})();
+(()=>{const st=document.createElement('style');st.textContent=`
+.twsearch input{width:100%;font-size:16px;padding:10px 12px;border:2px solid var(--gold);border-radius:10px}
+.twres{margin-top:8px;max-height:340px;overflow:auto}.twr{padding:8px 10px;border:1px solid var(--bd);border-radius:8px;margin-bottom:6px;cursor:pointer;background:#fff}.twr:hover{border-color:var(--g)}.twr b{color:var(--g)}
+.twtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.twtabs button{border:1px solid var(--g);background:#fff;color:var(--g);border-radius:20px;padding:8px 14px;font-weight:bold;cursor:pointer}.twtabs button.on{background:var(--g);color:#fff}
+.tag.warn{background:#FDECEA;color:#9B2226;border-color:#E8B4B0}
+table.twt th{text-align:center}table.twt td{text-align:center;height:1.6em}table.twt tr.twft td{font-weight:bold;background:#f2f2f2}
+table.dctbl{width:100%;border-collapse:collapse;margin-top:4px}table.dctbl th,table.dctbl td{border:1px solid #000;padding:3px 5px;text-align:center;font-size:10.5pt}table.dctbl td{height:1.55em}table.dctbl th{background:#eee;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.dcpg.land{width:277mm}`;document.head.appendChild(st);})();
+
 /* بطاقة «لون الواجهة» في الإعدادات */
 function mkbThemeSet(k){try{localStorage.setItem('mkb_theme',k);}catch(e){}mkbThemeApply(k);toast('✓ لون الواجهة: '+MKB_THEMES[k][0]);go('settings');}
 (()=>{try{if(typeof V!=="undefined"&&V.settings){const b=V.settings;V.settings=(...a)=>{const cur=mkbTheme();return b(...a)+`<div class="card"><h3>🎨 لون الواجهة</h3><p class="muted">يغير لون الشريط العلوي والأزرار والعناوين في هذا الجهاز. الوثائق المطبوعة لا تتأثر.</p><div class="row" style="gap:8px">${Object.entries(MKB_THEMES).map(([k,t])=>`<button class="btn" onclick="mkbThemeSet('${k}')" style="background:${t[1]};min-width:92px;${k===cur?'outline:3px solid #B08D57;outline-offset:2px;font-weight:bold':''}">${k===cur?'✓ ':''}${t[0]}${k===(window.MKB_THEME_DEF||'green')?' (افتراضي)':''}</button>`).join('')}</div></div>`;};}}catch(e){}})();

@@ -2,7 +2,7 @@
    - يعمل التطبيق دائما بالنسخة المحفوظة على الجهاز (حتى دون اتصال).
    - عند نشر نسخة جديدة، تُنزَّل في الخلفية وتبقى «في الانتظار» ولا تُطبَّق تلقائيا.
    - يظهر للمستعمل إشعار بالتحديث وما فيه، ولا يُطبَّق إلا بعد ضغطه «تحديث الآن». */
-const VERSION='1.15.5';
+const VERSION='1.16.0';
 const CACHE='mouakaba-'+VERSION;
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/maskable-512.png','./icons/apple-180.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS.map(u=>new Request(u,{cache:'reload'})))));});
