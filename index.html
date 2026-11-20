@@ -4405,7 +4405,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 </script>
 
 <script>/* PWA: تحديث متحكَّم فيه — إشعار بالتحديث وتطبيقه بإذن المستعمل، وطلب تخزين دائم للمعطيات */
-const APP_VERSION='1.16.0';let MKB_REG=null;
+const APP_VERSION='1.16.1';let MKB_REG=null;
 async function mkbUpdNotes(){try{return await (await fetch('./version.json?t='+Date.now(),{cache:'no-store'})).json();}catch(e){return null;}}
 async function mkbUpdShow(w){if(!w)return;const v=await mkbUpdNotes()||{};
  if(v.version&&v.version===APP_VERSION){w.postMessage('skip');return;}
@@ -4597,7 +4597,9 @@ V.tawthiq=()=>{if(!S.docs)S.docs=[];S.imports=S.imports||[];
 AFTER.tawthiq=()=>{if(AFTER.docs&&(dcT))AFTER.docs();const pv=$('#twPv .pg');if(pv){const box=pv.parentElement,W=pv.offsetWidth||1,sc=Math.min(1,(box.clientWidth-4)/W);pv.style.transformOrigin='top right';pv.style.transform=`scale(${sc})`;box.style.height=(pv.offsetHeight*sc+8)+'px';box.style.overflow='hidden';}
  if(twQ&&$('#twQ'))twSearch(twQ);const mq=$('#twMdQ');if(mq&&document.activeElement!==mq&&twMdQ){mq.focus();mq.setSelectionRange(mq.value.length,mq.value.length);}};
 /* القائمة الجانبية: تبويب مستقل قبل «مرجعيات» */
-(()=>{const i=MODS.findIndex(m=>m[0]==='g'&&m[1]==='مرجعيات');const add=[['g','التوثيق الإداري'],['tawthiq','التوثيق الإداري']];if(i>=0)MODS.splice(i,0,...add);else MODS.push(...add);})();
+(()=>{const i=MODS.findIndex(m=>m[0]==='g'&&m[1]==='مرجعيات');const add=[['g','التوثيق الإداري'],['tawthiq','التوثيق الإداري']];if(i>=0)MODS.splice(i,0,...add);else MODS.push(...add);
+ /* القائمة رُسمت عند فتح التطبيق قبل إضافة هذا التبويب: إعادة رسمها (ورسم لوحة القيادة) فورا */
+ const re=()=>{try{renderNav();if(cur==='home'&&document.querySelector('#main .tiles'))go('home');}catch(e){}};re();setTimeout(re,0);})();
 /* «وثائق الاستعمال اليومي» تبقى كما هي: لا تظهر فيها نماذج هذا التبويب ولا وثائقه المستوردة */
 (()=>{const b=V.docs;V.docs=()=>{if(cur==='docs'&&twIsMine(dcT))dcT='';return b();};})();
 (()=>{const st=document.createElement('style');st.textContent=`
